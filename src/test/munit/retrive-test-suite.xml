@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+	xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<munit:config name="retrive-test-suite.xml" />
+	<munit:test name="retrive-test-suite-retrive-call-retrive-requestTest" doc:id="1966bc64-4756-42e3-8d15-1b13a96c0f0a" description="Test">
+		<munit:enable-flow-sources>
+			<munit:enable-flow-source value="clients-tms-create_shipments_SAP" />
+		</munit:enable-flow-sources>
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="ee042ce1-8bac-4ded-9d72-5183445f02bb" processor="flow-ref">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="clients-tms-create_shipments_SAP" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="APP:CANNOT_DISPATCH" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<ee:transform doc:name="Transform Message" doc:id="7e57daef-5706-4562-b567-7fd3a8ce4f5b" >
+				<ee:message >
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="payloadBK" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "shipment_number": "",
+  "tracking_number": "8020779825",
+  "commodity_code": "SECO",
+  "customer_code": "0201000580",
+  "ship_from_location_code": "DGARI_PROLOGICS_54915",
+  "ship_to_location_code": "0890000594",
+  "project_name": "DGARI_CTL_NACIONAL",
+  "profit_center_code": null,
+  "equipment_type_code": "",
+  "service_code": "FTL",
+  "load_datetime": "01/31/2023 12:46:34",
+  "appointment_datetime": "02/01/2023 12:46:34",
+  "container": [
+    {
+      "item_number": "",
+      "NumberOfUnits": "",
+      "ItemDescription": "",
+      "container_type_code": "PALLET",
+      "quantity": "1.059",
+      "freight_class_nominal_weight": "873.0689329556",
+      "length": "1.000",
+      "height": "1.500",
+      "width": "1.200",
+      "flexible_quantity1": 0,
+      "flexible_quantity2": 0
+    }
+  ],
+  "project_hardcode": {
+    "shipment_priority": "1",
+    "system_plan_id": "3333",
+    "logistics_group_code": "CTL",
+    "division_code": "CTL",
+    "shipment_input_source_enum": "IS_EXTERNAL_API",
+    "shipment_entry_mode_enum_val": "TOM_COMP_LEVEL_DETAIL",
+    "split_method_enum_val": "SPLIT_METHOD_PIECES",
+    "ship_to_appointment_required_flag": "TRUE",
+    "shipment_entry_version_code": "01",
+    "shipment_entry_type_code": "01",
+    "freight_terms_enum_val": "FT_PRE_PAID",
+    "urgent_flag": "FALSE",
+    "defer_ap_rating_flag": "TRUE",
+    "defer_ar_rating_flag": "TRUE",
+    "ignore_reference_numbers_flag": "FALSE",
+    "ignore_containers_flag": "FALSE",
+    "ignore_shipment_items_flag": "FALSE",
+    "ignore_weight_by_freight_class_flag": "TRUE",
+    "freight_class_code": "*FAK",
+    "ignore_all_shipment_reference_numbers_flag": "FALSE",
+    "execute_ap_rating_flag": "TRUE",
+    "execute_ar_rating_flag": "TRUE",
+    "result_content": "RES_SHIPMENT_HEADER"
+  }
+}]]></ee:set-variable>
+					<ee:set-variable variableName="stk_num" ><![CDATA[%dw 2.0
+output application/json
+---
+"8020779825"]]></ee:set-variable>
+					<ee:set-variable variableName="type_message" ><![CDATA[%dw 2.0
+output application/json
+---
+"CREATE_SHIPMENT"]]></ee:set-variable>
+					<ee:set-variable variableName="flowRequest" ><![CDATA[%dw 2.0
+output application/json
+---
+"clients-tms-create_shipments_SAP"]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<flow-ref doc:name="Flow-ref to retrive-call-retrive-request" doc:id="0b5f7416-9d7d-47d3-85ae-c848f74965a0" name="retrive-call-retrive-request"/>
+		</munit:execution>
+		<munit:validation >
+			<logger level="INFO" doc:name="Logger" doc:id="d310a163-f3e4-4252-8d6c-4cd5e74b877a" message="#[payload]"/>
+		</munit:validation>
+	</munit:test>
+
+
+</mule>
