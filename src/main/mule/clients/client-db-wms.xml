@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<sub-flow name="client-get-availability-db-wms-get-availability" doc:id="8cf9afc6-58b3-49d5-9ae7-8f8d694bb829" >
+		<db:select doc:name="Select" doc:id="efda0571-bb4f-4dc0-becb-413ac6981664" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[select prtnum sku,
+       sum(iv.untqty) disp,
+       untcas cantPzPck
+from TRAXWMSTST.inventory_view iv
+where iv.prtnum=:sku and
+              iv.wh_id='AVIOR-27'
+group by prtnum,untcas]]></db:sql>
+			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="client-get-availability-db-wms-get-volumetry" doc:id="668624cb-11e6-4fec-82c9-18369b7a2669" >
+		<db:select doc:name="Select" doc:id="529895af-3d19-4897-b0bc-6f2a588a1af7" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[select prtnum, untqty, len*wid*hgt vol, netwgt, uomcod, ftpcod from TRAXWMSTST.PRTFTP_DTL 
+where prtnum in (:sku) and wh_id='AVIOR-27' ]]></db:sql>
+			<db:input-parameters ><![CDATA[#[sku:payload.sku]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="client-get-availability-db-wms-get-partfoot-details" doc:id="c504be1d-524e-4928-a87a-9dcb543e8e4b" >
+		<db:select doc:name="Select" doc:id="a2d5ad18-aaf6-40ec-b465-db5324a006a9" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[select ftpcod,
+uomcod,
+untqty unidades,
+len,
+wid,
+hgt,
+len*wid*hgt vol
+from TRAXWMSTST.PRTFTP_DTL iv
+where iv.prtnum= :sku and
+      iv.wh_id='AVIOR-27']]></db:sql>
+			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="client-get-availability-db-wms-get-logistics-footprint" doc:id="1dea7a51-4674-4ad4-8e38-ff198bf66e3b" >
+		<db:select doc:name="Select" doc:id="4754006c-1203-46c8-8718-c781618ad286" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[select ftpcod, --huella logistica
+        uomcod,--PAllets, PieZa, CaJa
+        untqty unidades,
+        len,
+        wid,
+        hgt,
+        len*wid*hgt vol
+from TRAXWMSTST.PRTFTP_DTL iv
+where iv.prtnum=:sku and
+              iv.wh_id='AVIOR-27']]></db:sql>
+			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+</mule>

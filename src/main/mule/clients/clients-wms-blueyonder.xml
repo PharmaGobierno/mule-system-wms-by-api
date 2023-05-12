@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="clients-wms-blueyonder-set-response" doc:id="f05b9d9a-cd8d-4391-a9e6-1788f6a3e682" >
+		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="Set Payload" doc:id="f1299591-ed88-4676-ba98-f1f864031db1" />
+	</sub-flow>
+	<sub-flow name="clients-wms-blueyonder-save-payload" doc:id="55159f93-1ee8-4257-a47a-210c4ef0c745" >
+		<set-variable value="#[%dw 2.0&#10;output application/xml&#10;---&#10;payload]" doc:name="Save Payload" doc:id="659aafdf-0159-41dc-9480-aea9235ab0dd" variableName="payloadBackup" />
+	</sub-flow>
+	<sub-flow name="clients-wms-blueyonder-request-login" doc:id="129dc533-5385-4576-9923-75c12c13b52d" >
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    &quot;usr_id&quot;: p('client.wms.blueyonder.https.path.login.user'),&#10;    &quot;password&quot;: p('client.wms.blueyonder.https.path.login.password')&#10;}]" doc:name="Request Login" doc:id="252342ad-5039-4081-917d-e868d85b21ad" variableName="requestLogin" />
+	</sub-flow>
+	<sub-flow name="clients-post-wms-blueyonder-login-api" doc:id="4d6a6107-8a69-4f5b-9cde-447612feffb7" >
+		<http:request method="POST" doc:name="Login" doc:id="5af2d855-7f39-42f4-b75c-e9e1245d4f2e" config-ref="Request_AWS_BlueYonder" path="${client.wms.blueyonder.https.path.login.post}">
+			<http:body ><![CDATA[#[vars.requestLogin]]]></http:body>
+		</http:request>
+	</sub-flow>
+	<sub-flow name="clients-post-wms-blueyonder-service-api" doc:id="d4f959b1-149b-4897-9198-9978d3b10360" >
+		<http:request method="POST" doc:name="Request WMS" doc:id="3158e7f0-3609-4faa-83f0-b39c74f28a10" config-ref="Request_AWS_BlueYonder" path="${client.wms.blueyonder.https.path.wms.post}">
+		</http:request>
+	</sub-flow>
+</mule>

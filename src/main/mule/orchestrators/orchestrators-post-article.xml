@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrators-update-article" doc:id="9de8a181-03dc-4282-8646-dec20083d7c8" >
+		<logger level="INFO" doc:name="Payload" doc:id="4153579e-e855-471f-bd59-07630cedd630" message="payloadXML: #[payload] " />
+		<flow-ref doc:name="Call to clients-wms-blueyonder-save-payload" doc:id="5f4b9712-fa76-49dc-b4d8-2d18569fd9f5" name="clients-wms-blueyonder-save-payload"/>
+		<flow-ref doc:name="Call to clients-wms-blueyonder-request-login" doc:id="5f584f71-ebe0-461b-80f7-23e0905fc3a9" name="clients-wms-blueyonder-request-login"/>
+		<flow-ref doc:name="Call clients-post-wms-blueyonder-login-api" doc:id="e6a77698-76e2-4ba0-962d-036dc0381695" name="clients-post-wms-blueyonder-login-api" target="loginResponse"/>
+		<flow-ref doc:name="Call to clients-post-wms-blueyonder-service-api" doc:id="5343fc5f-7a6e-4c70-8520-70610b1be252" name="clients-post-wms-blueyonder-service-api"/>
+		<flow-ref doc:name="Call to clients-wms-blueyonder-set-response" doc:id="65a18fd2-7104-47a3-8929-623747a44db6" name="clients-wms-blueyonder-set-response"/>
+		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]"/>
+	</sub-flow>
+</mule>

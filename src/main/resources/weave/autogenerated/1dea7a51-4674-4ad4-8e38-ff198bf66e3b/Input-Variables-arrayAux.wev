@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_1dea7a51_4674_4ad4_8e38_ff198bf66e3b_Input_Variables_arrayAux = Array<Nothing>
+
