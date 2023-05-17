@@ -25,30 +25,170 @@ where prtnum in (:sku) and wh_id='AVIOR-27' ]]></db:sql>
 	</sub-flow>
 	<sub-flow name="client-get-availability-db-wms-get-partfoot-details" doc:id="c504be1d-524e-4928-a87a-9dcb543e8e4b" >
 		<db:select doc:name="Select" doc:id="a2d5ad18-aaf6-40ec-b465-db5324a006a9" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[select ftpcod,
-uomcod,
-untqty unidades,
-len,
-wid,
-hgt,
-len*wid*hgt vol
-from TRAXWMSTST.PRTFTP_DTL iv
-where iv.prtnum= :sku and
-      iv.wh_id='AVIOR-27']]></db:sql>
-			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
+			<db:sql ><![CDATA[select shipment.ship_id,
+        prtmst.prtnum,
+        trlr.dispatch_dte fecha_despacho,
+        ord.stcust umu_idestacion,
+        stop.stop_id tipoestacion_parada,
+        adrmst.adrln1 calle,
+        (select lngdsc
+         from TRAXWMSTST.dscmst
+         where colnam = 'adrstc'
+			AND locale_id = 'ES-ES'
+            AND colval = 'CRI|' || adrmst.adrstc) estado,
+        adrmst.ctry_name pais,
+        (select sum(aiv_2.untqty)
+         from TRAXWMSTST.all_inventory_view aiv_2
+         where aiv_2.subnum = all_inventory_view.subnum) total_mercancias,
+        (select lngdsc
+         from TRAXWMSTST.dscmst
+         where colnam = 'ctncod|wh_id'
+			and locale_id = 'ES-ES'
+            and colval = pckwrk_view.ctncod || '|' || ord.wh_id) unidad_peso,
+        altprt_sat.alt_prtnum clavesat,
+        prtdsc.lngdsc descripcion,
+        all_inventory_view.untqty cantidades,
+        decode(prtmst.hazmat_flg, 0, 'NO', 'SI') peligroso,
+        prtmst.ltlcls clave_peligroso,
+        prtftp_dtl.grswgt * all_inventory_view.untqty pesoxarticulo,
+        carhdr.scacod permiso_transporte,
+        trlr.trlr_seal2 aseguradora,
+        trlr.trlr_seal3 poliza,
+        trlr.trlr_typ tipo_vehiculo,
+        trlr.trlr_ref placa,
+        trlr.trlr_seal4 modelo,
+        powerunit.powerunit_type tipo_remolque,
+        powerunit.powerunit_id placa_remolque,
+        trlr.trlr_broker rfc_operador,
+        trlr.driver_nam nombre_operador,
+        trlr.driver_lic_num lic_operador,
+        carhdr.accnum rfc_transp,
+        carhdr.carnam nombre_transp,
+        adrmst_car.adrln1 calle_transp,
+        adrmst_car.adrstc estado_transp,
+        adrmst_car.adrcty pais_transp,
+        adrmst_car.adrpsz cp_transp,
+        ord.entdte fecha_levantamiento,
+        prtmst.comcod partida_presupuestal
+from TRAXWMSTST.ord
+	join TRAXWMSTST.ord_line
+    on ord.ordnum = ord_line.ordnum
+		and ord.wh_id = ord_line.wh_id
+		and ord.client_id = ord_line.client_id
+	join TRAXWMSTST.adrmst
+	on adrmst.client_id = ord.client_id
+		and adrmst.host_ext_id = ord.stcust
+		and adrmst.adrtyp = 'CST'
+    join TRAXWMSTST.shipment_line
+    on shipment_line.ordnum = ord_line.ordnum
+		and shipment_line.ordlin = ord_line.ordlin
+		and shipment_line.wh_id = ord_line.wh_id
+		and shipment_line.client_id = ord_line.client_id
+		and shipment_line.linsts <> 'B'
+    join TRAXWMSTST.all_inventory_view
+    on all_inventory_view.wh_id = shipment_line.wh_id
+		and all_inventory_view.prt_client_id = shipment_line.prt_client_id
+		and all_inventory_view.ship_line_id = shipment_line.ship_line_id
+	left join TRAXWMSTST.prtmst
+	on all_inventory_view.prtnum = prtmst.prtnum
+		and all_inventory_view.prt_client_id = prtmst.prt_client_id
+		and prtmst.wh_id_tmpl = 'AVIOR-27'
+	left join TRAXWMSTST.prtdsc
+	on prtdsc.colnam = 'prtnum|prt_client_id|wh_id_tmpl'
+		and prtdsc.colval = all_inventory_view.prtnum || '|' || all_inventory_view.prt_client_id || '|' || all_inventory_view.wh_id
+	left join TRAXWMSTST.alt_prtmst altprt_sat
+	on all_inventory_view.prtnum = altprt_sat.prtnum
+		and all_inventory_view.prt_client_id = altprt_sat.prt_client_id
+		and altprt_sat.alt_prt_typ = 'DSPITM'
+        /* Huella pieza */
+	left join TRAXWMSTST.prtftp_dtl
+	on all_inventory_view.wh_id = prtftp_dtl.wh_id
+		and all_inventory_view.prtnum = prtftp_dtl.prtnum
+		and all_inventory_view.ftpcod = prtftp_dtl.ftpcod
+		and prtftp_dtl.uomlvl = 0
+	join TRAXWMSTST.shipment
+	on shipment.ship_id = shipment_line.ship_id
+		and shipment.wh_id = shipment_line.wh_id
+		and shipment.shpsts <> 'B'
+	join TRAXWMSTST.stop
+    on shipment.stop_id = stop.stop_id
+	join TRAXWMSTST.car_move
+    on stop.car_move_id = car_move.car_move_id
+	join TRAXWMSTST.trlr
+    on car_move.trlr_id = trlr.trlr_id
+		and trlr.trlr_cod = 'SHIP'
+	left join TRAXWMSTST.pckwrk_view
+	on pckwrk_view.client_id = shipment_line.client_id
+		and pckwrk_view.wh_id = shipment_line.wh_id
+		and pckwrk_view.ship_id = shipment_line.ship_id
+		and pckwrk_view.ordnum = shipment_line.ordnum
+		and pckwrk_view.prtnum = 'KITPART'
+	left join TRAXWMSTST.carhdr
+	on car_move.carcod = carhdr.carcod
+	left join TRAXWMSTST.adrmst adrmst_car
+    on carhdr.adr_id = adrmst.adr_id
+	left join TRAXWMSTST.powerunit
+	on car_move.carcod = powerunit.carcod
+where ord.wh_id = 'AVIOR-27'
+	and all_inventory_view.stoloc = trlr.trlr_id
+	AND shipment.ship_id = :shipment
+group by ord.ordnum,
+        prtmst.prtnum,
+        shipment.ship_id,
+        trlr.dispatch_dte,
+        ord.stcust,
+        stop.stop_id,
+        adrmst.adrln1,
+        adrmst.adrstc,
+        adrmst.ctry_name,
+        pckwrk_view.ctncod,
+        ord.wh_id,
+        altprt_sat.alt_prtnum,
+        all_inventory_view.untqty,
+        all_inventory_view.subnum,
+        prtdsc.lngdsc,
+        prtmst.hazmat_flg,
+        prtmst.ltlcls,
+        prtftp_dtl.grswgt,
+        carhdr.scacod,
+        trlr.trlr_seal2,
+        trlr.trlr_seal3,
+        trlr.trlr_seal4,
+        trlr.trlr_typ,
+        trlr.trlr_ref,
+        powerunit.powerunit_type,
+        powerunit.powerunit_id,
+        trlr.trlr_broker,
+        trlr.driver_lic_num,
+        trlr.driver_nam,
+        carhdr.accnum,
+        carhdr.carnam,
+        adrmst_car.adrln1,
+        adrmst_car.adrcty,
+        adrmst_car.adrstc,
+        adrmst_car.adrpsz,
+        prtmst.comcod,
+        ord.entdte]]></db:sql>
+			<db:input-parameters ><![CDATA[#[shipment:payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
 	<sub-flow name="client-get-availability-db-wms-get-logistics-footprint" doc:id="1dea7a51-4674-4ad4-8e38-ff198bf66e3b" >
 		<db:select doc:name="Select" doc:id="4754006c-1203-46c8-8718-c781618ad286" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[select PRTNUM, --codigo producto
-      	ftpcod, --codigo huella logistica
-        uomcod,--PAllets, PieZa, CaJa
-        untqty unidades,
-        len,
-        wid,
-        hgt,
-        len*wid*hgt vol
+			<db:sql ><![CDATA[SELECT DISTINCT iv.uomcod,--Pallets, Pieza, Caja, 
+      iv.PRTNUM, --codigo producto
+      	iv.ftpcod, --codigo huella logistica
+        iv.UNTQTY,
+        iv.len,
+        iv.wid,
+        iv.hgt,
+        iv.GRSWGT,
+        iv.NETWGT,
+        pr.CASLVL,
+        pr.DEFFTP_FLG,
+        iv.len*iv.wid*iv.hgt vol
 from TRAXWMSTST.PRTFTP_DTL iv
+LEFT JOIN TRAXWMSTST.PRTFTP pr
+ON iv.PRTNUM =  pr.PRTNUM 
 where iv.FTPCOD =:sku and
               iv.wh_id='AVIOR-27']]></db:sql>
 			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
