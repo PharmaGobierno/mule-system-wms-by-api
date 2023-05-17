@@ -48,7 +48,7 @@ where iv.prtnum= :sku and
         hgt,
         len*wid*hgt vol
 from TRAXWMSTST.PRTFTP_DTL iv
-where iv.prtnum=:sku and
+where iv.FTPCOD =:sku and
               iv.wh_id='AVIOR-27']]></db:sql>
 			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
 		</db:select>
