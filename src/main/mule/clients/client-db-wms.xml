@@ -40,7 +40,8 @@ where iv.prtnum= :sku and
 	</sub-flow>
 	<sub-flow name="client-get-availability-db-wms-get-logistics-footprint" doc:id="1dea7a51-4674-4ad4-8e38-ff198bf66e3b" >
 		<db:select doc:name="Select" doc:id="4754006c-1203-46c8-8718-c781618ad286" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[select ftpcod, --huella logistica
+			<db:sql ><![CDATA[select PRTNUM, --codigo producto
+      	ftpcod, --codigo huella logistica
         uomcod,--PAllets, PieZa, CaJa
         untqty unidades,
         len,
