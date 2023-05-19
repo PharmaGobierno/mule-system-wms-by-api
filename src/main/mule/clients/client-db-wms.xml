@@ -174,23 +174,23 @@ group by ord.ordnum,
 	</sub-flow>
 	<sub-flow name="client-get-availability-db-wms-get-logistics-footprint" doc:id="1dea7a51-4674-4ad4-8e38-ff198bf66e3b" >
 		<db:select doc:name="Select" doc:id="4754006c-1203-46c8-8718-c781618ad286" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[SELECT DISTINCT iv.uomcod,--Pallets, Pieza, Caja, 
-      iv.PRTNUM, --codigo producto
-      	iv.ftpcod, --codigo huella logistica
-        iv.UNTQTY,
-        iv.len,
-        iv.wid,
-        iv.hgt,
-        iv.GRSWGT,
-        iv.NETWGT,
-        pr.CASLVL,
-        pr.DEFFTP_FLG,
-        iv.len*iv.wid*iv.hgt vol
-from TRAXWMSTST.PRTFTP_DTL iv
-LEFT JOIN TRAXWMSTST.PRTFTP pr
-ON iv.PRTNUM =  pr.PRTNUM 
-where iv.FTPCOD =:sku and
-              iv.wh_id='AVIOR-27']]></db:sql>
+			<db:sql ><![CDATA[SELECT DISTINCT iv.uomcod,/*Pallets, Pieza, Caja, */
+	iv.PRTNUM, /*codigo producto*/
+	iv.ftpcod, /*codigo huella logistica*/
+	iv.UNTQTY,
+	iv.len,
+	iv.wid,
+	iv.hgt,
+	iv.GRSWGT,
+	iv.NETWGT,
+	pr.CASLVL,
+	pr.DEFFTP_FLG,
+	iv.len*iv.wid*iv.hgt vol
+	from TRAXWMSTST.PRTFTP_DTL iv
+	inner JOIN TRAXWMSTST.PRTFTP pr
+	ON iv.FTPCOD = pr.FTPCOD
+	where iv.FTPCOD = :sku and
+	iv.wh_id='AVIOR-27';]]></db:sql>
 			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
