@@ -190,7 +190,7 @@ group by ord.ordnum,
 	inner JOIN TRAXWMSTST.PRTFTP pr
 	ON iv.FTPCOD = pr.FTPCOD
 	where iv.FTPCOD = :sku and
-	iv.wh_id='AVIOR-27';]]></db:sql>
+	iv.wh_id='AVIOR-27']]></db:sql>
 			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
