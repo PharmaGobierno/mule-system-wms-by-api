@@ -35,7 +35,7 @@ where prtnum in (:sku) and wh_id='AVIOR-27' ]]></db:sql>
          from TRAXWMSTST.dscmst
          where colnam = 'adrstc'
 			AND locale_id = 'ES-ES'
-            AND colval = 'CRI|' || adrmst.adrstc) estado,
+            AND colval = 'MEX|' || adrmst.adrstc) estado,
         adrmst.ctry_name pais,
         (select sum(aiv_2.untqty)
          from TRAXWMSTST.all_inventory_view aiv_2
@@ -51,7 +51,7 @@ where prtnum in (:sku) and wh_id='AVIOR-27' ]]></db:sql>
         decode(prtmst.hazmat_flg, 0, 'NO', 'SI') peligroso,
         prtmst.ltlcls clave_peligroso,
         prtftp_dtl.grswgt * all_inventory_view.untqty pesoxarticulo,
-        carhdr.scacod permiso_transporte,
+        adrmst_car.adr_district permiso_transporte,
         trlr.trlr_seal2 aseguradora,
         trlr.trlr_seal3 poliza,
         trlr.trlr_typ tipo_vehiculo,
@@ -69,7 +69,8 @@ where prtnum in (:sku) and wh_id='AVIOR-27' ]]></db:sql>
         adrmst_car.adrcty pais_transp,
         adrmst_car.adrpsz cp_transp,
         ord.entdte fecha_levantamiento,
-        prtmst.comcod partida_presupuestal
+        prtmst.comcod partida_presupuestal,
+		shipment_line.pckgr1 monto
 from TRAXWMSTST.ord
 	join TRAXWMSTST.ord_line
     on ord.ordnum = ord_line.ordnum
@@ -99,7 +100,7 @@ from TRAXWMSTST.ord
 	left join TRAXWMSTST.alt_prtmst altprt_sat
 	on all_inventory_view.prtnum = altprt_sat.prtnum
 		and all_inventory_view.prt_client_id = altprt_sat.prt_client_id
-		and altprt_sat.alt_prt_typ = 'DSPITM'
+		and altprt_sat.alt_prt_typ = 'SAT'
         /* Huella pieza */
 	left join TRAXWMSTST.prtftp_dtl
 	on all_inventory_view.wh_id = prtftp_dtl.wh_id
@@ -126,9 +127,10 @@ from TRAXWMSTST.ord
 	left join TRAXWMSTST.carhdr
 	on car_move.carcod = carhdr.carcod
 	left join TRAXWMSTST.adrmst adrmst_car
-    on carhdr.adr_id = adrmst.adr_id
+    on carhdr.adr_id = adrmst_car.adr_id
 	left join TRAXWMSTST.powerunit
 	on car_move.carcod = powerunit.carcod
+	AND trlr.powerunit_id = powerunit.powerunit_id
 where ord.wh_id = 'AVIOR-27'
 	and all_inventory_view.stoloc = trlr.trlr_id
 	AND shipment.ship_id = :shipment
@@ -150,7 +152,7 @@ group by ord.ordnum,
         prtmst.hazmat_flg,
         prtmst.ltlcls,
         prtftp_dtl.grswgt,
-        carhdr.scacod,
+        adrmst_car.adr_district,
         trlr.trlr_seal2,
         trlr.trlr_seal3,
         trlr.trlr_seal4,
@@ -168,7 +170,8 @@ group by ord.ordnum,
         adrmst_car.adrstc,
         adrmst_car.adrpsz,
         prtmst.comcod,
-        ord.entdte]]></db:sql>
+        ord.entdte,
+        shipment_line.pckgr1]]></db:sql>
 			<db:input-parameters ><![CDATA[#[shipment:payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
