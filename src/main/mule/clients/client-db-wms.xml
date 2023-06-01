@@ -4,7 +4,7 @@
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
-	<sub-flow name="client-get-availability-db-wms-get-availability" doc:id="8cf9afc6-58b3-49d5-9ae7-8f8d694bb829" >
+	<sub-flow name="client-db-wms-get-availability" doc:id="8cf9afc6-58b3-49d5-9ae7-8f8d694bb829" >
 		<db:select doc:name="Select" doc:id="efda0571-bb4f-4dc0-becb-413ac6981664" config-ref="Database_Config_WMS_BlueYonder">
 			<db:sql ><![CDATA[select prtnum sku,
        sum(iv.untqty) disp,
@@ -16,14 +16,14 @@ group by prtnum,untcas]]></db:sql>
 			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
-	<sub-flow name="client-get-availability-db-wms-get-volumetry" doc:id="668624cb-11e6-4fec-82c9-18369b7a2669" >
+	<sub-flow name="client-db-wms-get-volumetry" doc:id="668624cb-11e6-4fec-82c9-18369b7a2669" >
 		<db:select doc:name="Select" doc:id="529895af-3d19-4897-b0bc-6f2a588a1af7" config-ref="Database_Config_WMS_BlueYonder">
 			<db:sql ><![CDATA[select prtnum, untqty, len*wid*hgt vol, netwgt, uomcod, ftpcod from TRAXWMSTST.PRTFTP_DTL 
 where prtnum in (:sku) and wh_id='AVIOR-27' ]]></db:sql>
 			<db:input-parameters ><![CDATA[#[sku:payload.sku]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
-	<sub-flow name="client-get-availability-db-wms-get-partfoot-details" doc:id="c504be1d-524e-4928-a87a-9dcb543e8e4b" >
+	<sub-flow name="client-db-wms-get-partfoot-details" doc:id="c504be1d-524e-4928-a87a-9dcb543e8e4b" >
 		<db:select doc:name="Select" doc:id="a2d5ad18-aaf6-40ec-b465-db5324a006a9" config-ref="Database_Config_WMS_BlueYonder">
 			<db:sql ><![CDATA[select shipment.ship_id,
         prtmst.prtnum,
@@ -175,7 +175,47 @@ group by ord.ordnum,
 			<db:input-parameters ><![CDATA[#[shipment:payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
-	<sub-flow name="client-get-availability-db-wms-get-logistics-footprint" doc:id="1dea7a51-4674-4ad4-8e38-ff198bf66e3b" >
+	<sub-flow name="client-db-wms-get-box-quantity" doc:id="0c31bbcd-70e6-4f4a-8546-188b92a19c4a" >
+		<db:select doc:name="Select" doc:id="99247b82-ec6d-40d6-9f8d-c8134d005366" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[select (select sum(case when (invd_h1.subnum like 'SHP%' or invd_h1.subnum like 'CTN%') then 1
+                         else ceil(sum(invd_h1.untqty) / (select distinct dtl_cas.untcas
+                                                            from TRAXWMSTST.invdtl_hist dtl_cas
+                                                           where dtl_cas.subnum = invd_h1.subnum))
+                    end)
+           from TRAXWMSTST.shipment_line shplin
+           join TRAXWMSTST.invdtl_hist invd_h1
+             on invd_h1.ship_line_id = shplin.ship_line_id
+           join TRAXWMSTST.invsub_hist invs_h1
+             on invs_h1.subnum = invd_h1.subnum
+          where shplin.ship_id = shipment_line.ship_id
+            and invs_h1.lodnum = invsub_hist.lodnum
+            and shplin.wh_id = invlod_hist.wh_id
+          group by invd_h1.subnum) as bultos_por_orden,
+        shipment_line.ship_id,
+        ord.ordnum
+   from TRAXWMSTST.shipment_line
+   join TRAXWMSTST.ord
+     on ord.client_id = shipment_line.client_id
+    and ord.ordnum = shipment_line.ordnum
+    and ord.wh_id = shipment_line.wh_id
+   join TRAXWMSTST.invdtl_hist
+     on invdtl_hist.ship_line_id = shipment_line.ship_line_id
+   join TRAXWMSTST.invsub_hist
+     on invsub_hist.subnum = invdtl_hist.subnum
+   join TRAXWMSTST.invlod_hist
+     on invlod_hist.lodnum = invsub_hist.lodnum
+  where shipment_line.ship_id in (:shipment)
+    and shipment_line.wh_id = 'AVIOR-27'
+  group by shipment_line.ship_id,
+        invsub_hist.lodnum,
+        ord.ordnum,
+        invdtl_hist.subnum,
+        invlod_hist.wh_id
+]]></db:sql>
+			<db:input-parameters ><![CDATA[#[shipment:payload]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="client-db-wms-get-logistics-footprint" doc:id="1dea7a51-4674-4ad4-8e38-ff198bf66e3b" >
 		<db:select doc:name="Select" doc:id="4754006c-1203-46c8-8718-c781618ad286" config-ref="Database_Config_WMS_BlueYonder">
 			<db:sql ><![CDATA[SELECT DISTINCT iv.uomcod,/*Pallets, Pieza, Caja, */
 	iv.PRTNUM, /*codigo producto*/

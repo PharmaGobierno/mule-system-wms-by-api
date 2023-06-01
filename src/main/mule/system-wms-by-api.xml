@@ -3,8 +3,8 @@
     <http:listener-config name="system-wms-by-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS" tlsContext="TLS_Context" />
     </http:listener-config>
-    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.5:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
-	<flow name="system-wms-by-api-main">
+    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.6:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="system-wms-by-api-main">
         <http:listener config-ref="system-wms-by-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
                 <http:headers>#[vars.outboundHeaders default {}]</http:headers>
@@ -155,6 +155,9 @@ output application/json
         </ee:transform> [STUDIO] -->
     </flow>
     <flow name="post:\wms\logistics_footprint:system-wms-by-api-config">
-		<flow-ref doc:name="Call to orchestrators-logistics-footprint" doc:id="84c82d1d-afe8-44f8-b433-ae9fda9d382f" name="orchestrators-logistics-footprint" />
+        <flow-ref doc:name="Call to orchestrators-logistics-footprint" doc:id="84c82d1d-afe8-44f8-b433-ae9fda9d382f" name="orchestrators-logistics-footprint" />
+    </flow>
+    <flow name="post:\wms\box_quantity:system-wms-by-api-config">
+        <flow-ref doc:name="Call to orchestrators-box-quantity" doc:id="54fcd5b6-1449-45e5-8e93-cc0feecda1ba" name="orchestrators-box-quantity"/>
     </flow>
 </mule>

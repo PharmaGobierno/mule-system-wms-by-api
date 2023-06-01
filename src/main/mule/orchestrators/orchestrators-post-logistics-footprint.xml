@@ -21,7 +21,7 @@ output application/json
 			</ee:variables>
 		</ee:transform>
 		<foreach doc:name="For Each" doc:id="27f2bc46-b783-48e2-835a-ddaabaeb2245" >
-			<flow-ref doc:name="Call to client-get-availability-db-wms-get-logistics-footprint" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-get-availability-db-wms-get-logistics-footprint" />
+			<flow-ref doc:name="Call to client-get-availability-db-wms-get-logistics-footprint" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-logistics-footprint" />
 			<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
 			<ee:transform doc:name="++ arrayAux" doc:id="3ac48490-4f7e-4abb-a8b1-af2b09165b9e" >
 				<ee:message />
