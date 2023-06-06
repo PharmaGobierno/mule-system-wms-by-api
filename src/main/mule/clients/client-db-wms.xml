@@ -9,7 +9,7 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 			<db:sql ><![CDATA[select prtnum sku,
        sum(iv.untqty) disp,
        untcas cantPzPck
-from TRAXWMSTST.inventory_view iv
+from TRXWMSPRD.inventory_view iv
 where iv.prtnum=:sku and
               iv.wh_id='AVIOR-27'
 group by prtnum,untcas]]></db:sql>
@@ -18,7 +18,7 @@ group by prtnum,untcas]]></db:sql>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-volumetry" doc:id="668624cb-11e6-4fec-82c9-18369b7a2669" >
 		<db:select doc:name="Select" doc:id="529895af-3d19-4897-b0bc-6f2a588a1af7" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[select prtnum, untqty, len*wid*hgt vol, netwgt, uomcod, ftpcod from TRAXWMSTST.PRTFTP_DTL 
+			<db:sql ><![CDATA[select prtnum, untqty, len*wid*hgt vol, netwgt, uomcod, ftpcod from TRXWMSPRD.PRTFTP_DTL 
 where prtnum in (:sku) and wh_id='AVIOR-27' ]]></db:sql>
 			<db:input-parameters ><![CDATA[#[sku:payload.sku]]]></db:input-parameters>
 		</db:select>
@@ -32,16 +32,16 @@ where prtnum in (:sku) and wh_id='AVIOR-27' ]]></db:sql>
         stop.stop_id tipoestacion_parada,
         adrmst.adrln1 calle,
         (select lngdsc
-         from TRAXWMSTST.dscmst
+         from TRXWMSPRD.dscmst
          where colnam = 'adrstc'
 			AND locale_id = 'ES-ES'
             AND colval = 'MEX|' || adrmst.adrstc) estado,
         adrmst.ctry_name pais,
         (select sum(aiv_2.untqty)
-         from TRAXWMSTST.all_inventory_view aiv_2
+         from TRXWMSPRD.all_inventory_view aiv_2
          where aiv_2.subnum = all_inventory_view.subnum) total_mercancias,
         (select lngdsc
-         from TRAXWMSTST.dscmst
+         from TRXWMSPRD.dscmst
          where colnam = 'ctncod|wh_id'
 			and locale_id = 'ES-ES'
             and colval = pckwrk_view.ctncod || '|' || ord.wh_id) unidad_peso,
@@ -71,64 +71,64 @@ where prtnum in (:sku) and wh_id='AVIOR-27' ]]></db:sql>
         ord.entdte fecha_levantamiento,
         prtmst.comcod partida_presupuestal,
 		shipment_line.pckgr1 monto
-from TRAXWMSTST.ord
-	join TRAXWMSTST.ord_line
+from TRXWMSPRD.ord
+	join TRXWMSPRD.ord_line
     on ord.ordnum = ord_line.ordnum
 		and ord.wh_id = ord_line.wh_id
 		and ord.client_id = ord_line.client_id
-	join TRAXWMSTST.adrmst
+	join TRXWMSPRD.adrmst
 	on adrmst.client_id = ord.client_id
 		and adrmst.host_ext_id = ord.stcust
 		and adrmst.adrtyp = 'CST'
-    join TRAXWMSTST.shipment_line
+    join TRXWMSPRD.shipment_line
     on shipment_line.ordnum = ord_line.ordnum
 		and shipment_line.ordlin = ord_line.ordlin
 		and shipment_line.wh_id = ord_line.wh_id
 		and shipment_line.client_id = ord_line.client_id
 		and shipment_line.linsts <> 'B'
-    join TRAXWMSTST.all_inventory_view
+    join TRXWMSPRD.all_inventory_view
     on all_inventory_view.wh_id = shipment_line.wh_id
 		and all_inventory_view.prt_client_id = shipment_line.prt_client_id
 		and all_inventory_view.ship_line_id = shipment_line.ship_line_id
-	left join TRAXWMSTST.prtmst
+	left join TRXWMSPRD.prtmst
 	on all_inventory_view.prtnum = prtmst.prtnum
 		and all_inventory_view.prt_client_id = prtmst.prt_client_id
 		and prtmst.wh_id_tmpl = 'AVIOR-27'
-	left join TRAXWMSTST.prtdsc
+	left join TRXWMSPRD.prtdsc
 	on prtdsc.colnam = 'prtnum|prt_client_id|wh_id_tmpl'
 		and prtdsc.colval = all_inventory_view.prtnum || '|' || all_inventory_view.prt_client_id || '|' || all_inventory_view.wh_id
-	left join TRAXWMSTST.alt_prtmst altprt_sat
+	left join TRXWMSPRD.alt_prtmst altprt_sat
 	on all_inventory_view.prtnum = altprt_sat.prtnum
 		and all_inventory_view.prt_client_id = altprt_sat.prt_client_id
 		and altprt_sat.alt_prt_typ = 'SAT'
         /* Huella pieza */
-	left join TRAXWMSTST.prtftp_dtl
+	left join TRXWMSPRD.prtftp_dtl
 	on all_inventory_view.wh_id = prtftp_dtl.wh_id
 		and all_inventory_view.prtnum = prtftp_dtl.prtnum
 		and all_inventory_view.ftpcod = prtftp_dtl.ftpcod
 		and prtftp_dtl.uomlvl = 0
-	join TRAXWMSTST.shipment
+	join TRXWMSPRD.shipment
 	on shipment.ship_id = shipment_line.ship_id
 		and shipment.wh_id = shipment_line.wh_id
 		and shipment.shpsts <> 'B'
-	join TRAXWMSTST.stop
+	join TRXWMSPRD.stop
     on shipment.stop_id = stop.stop_id
-	join TRAXWMSTST.car_move
+	join TRXWMSPRD.car_move
     on stop.car_move_id = car_move.car_move_id
-	join TRAXWMSTST.trlr
+	join TRXWMSPRD.trlr
     on car_move.trlr_id = trlr.trlr_id
 		and trlr.trlr_cod = 'SHIP'
-	left join TRAXWMSTST.pckwrk_view
+	left join TRXWMSPRD.pckwrk_view
 	on pckwrk_view.client_id = shipment_line.client_id
 		and pckwrk_view.wh_id = shipment_line.wh_id
 		and pckwrk_view.ship_id = shipment_line.ship_id
 		and pckwrk_view.ordnum = shipment_line.ordnum
 		and pckwrk_view.prtnum = 'KITPART'
-	left join TRAXWMSTST.carhdr
+	left join TRXWMSPRD.carhdr
 	on car_move.carcod = carhdr.carcod
-	left join TRAXWMSTST.adrmst adrmst_car
+	left join TRXWMSPRD.adrmst adrmst_car
     on carhdr.adr_id = adrmst_car.adr_id
-	left join TRAXWMSTST.powerunit
+	left join TRXWMSPRD.powerunit
 	on car_move.carcod = powerunit.carcod
 	AND trlr.powerunit_id = powerunit.powerunit_id
 where ord.wh_id = 'AVIOR-27'
@@ -179,13 +179,13 @@ group by ord.ordnum,
 		<db:select doc:name="Select" doc:id="99247b82-ec6d-40d6-9f8d-c8134d005366" config-ref="Database_Config_WMS_BlueYonder">
 			<db:sql ><![CDATA[select (select sum(case when (invd_h1.subnum like 'SHP%' or invd_h1.subnum like 'CTN%') then 1
                          else ceil(sum(invd_h1.untqty) / (select distinct dtl_cas.untcas
-                                                            from TRAXWMSTST.invdtl_hist dtl_cas
+                                                            from TRXWMSPRD.invdtl_hist dtl_cas
                                                            where dtl_cas.subnum = invd_h1.subnum))
                     end)
-           from TRAXWMSTST.shipment_line shplin
-           join TRAXWMSTST.invdtl_hist invd_h1
+           from TRXWMSPRD.shipment_line shplin
+           join TRXWMSPRD.invdtl_hist invd_h1
              on invd_h1.ship_line_id = shplin.ship_line_id
-           join TRAXWMSTST.invsub_hist invs_h1
+           join TRXWMSPRD.invsub_hist invs_h1
              on invs_h1.subnum = invd_h1.subnum
           where shplin.ship_id = shipment_line.ship_id
             and invs_h1.lodnum = invsub_hist.lodnum
@@ -193,18 +193,18 @@ group by ord.ordnum,
           group by invd_h1.subnum) as bultos_por_orden,
         shipment_line.ship_id,
         ord.ordnum
-   from TRAXWMSTST.shipment_line
-   join TRAXWMSTST.ord
+   from TRXWMSPRD.shipment_line
+   join TRXWMSPRD.ord
      on ord.client_id = shipment_line.client_id
     and ord.ordnum = shipment_line.ordnum
     and ord.wh_id = shipment_line.wh_id
-   join TRAXWMSTST.invdtl_hist
+   join TRXWMSPRD.invdtl_hist
      on invdtl_hist.ship_line_id = shipment_line.ship_line_id
-   join TRAXWMSTST.invsub_hist
+   join TRXWMSPRD.invsub_hist
      on invsub_hist.subnum = invdtl_hist.subnum
-   join TRAXWMSTST.invlod_hist
+   join TRXWMSPRD.invlod_hist
      on invlod_hist.lodnum = invsub_hist.lodnum
-  where shipment_line.ship_id in (:shipment)
+  where shipment_line.ship_id in ('SID0002322')
     and shipment_line.wh_id = 'AVIOR-27'
   group by shipment_line.ship_id,
         invsub_hist.lodnum,
@@ -229,8 +229,8 @@ group by ord.ordnum,
 	pr.CASLVL,
 	pr.DEFFTP_FLG,
 	iv.len*iv.wid*iv.hgt vol
-	from TRAXWMSTST.PRTFTP_DTL iv
-	inner JOIN TRAXWMSTST.PRTFTP pr
+	from TRXWMSPRD.PRTFTP_DTL iv
+	inner JOIN TRXWMSPRD.PRTFTP pr
 	ON iv.FTPCOD = pr.FTPCOD
 	where iv.FTPCOD = :sku and
 	iv.wh_id='AVIOR-27']]></db:sql>
