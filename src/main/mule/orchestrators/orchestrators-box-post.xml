@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrators-box-main" doc:id="c74a952d-17fd-4f17-83ac-f3bad499ba41" >
+		<flow-ref doc:name="orchestrators-box-prepare-request" doc:id="cbc1f574-e8bc-41c6-a9cd-f86d715d56d4" name="orchestrators-box-prepare-request"/>
+		<flow-ref doc:name="client-db-wms-get-box" doc:id="552d1735-561e-4f9a-9963-693180c8a249" name="client-db-wms-get-box"/>
+	</sub-flow>
+	<sub-flow name="orchestrators-box-prepare-request" doc:id="960ff79c-b1ca-4d13-bea0-2ab40b66f382" >
+		<ee:transform doc:name="Transform Message" doc:id="d39e0044-cb02-4952-9b74-2f2788eb704b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	ordnum: payload.code
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>

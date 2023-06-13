@@ -237,4 +237,64 @@ group by ord.ordnum,
 			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
+	<sub-flow name="client-db-wms-get-box" doc:id="0c31bbcd-70e6-4f4a-8546-188b92a19c4a" >
+		<db:select doc:name="Select" doc:id="99247b82-ec6d-40d6-9f8d-c8134d005366" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[select *
+from
+(select count(distinct pv2.ctnnum) as "SurtidosEnPalet", 
+        iv.lodnum LPN
+from TRXWMSPRD.pckwrk_view pv1
+join TRXWMSPRD.pckwrk_view pv2
+on pv1.schbat = pv2.schbat
+        and pv1.ordnum = pv2.ordnum
+        and pv1.ordlin = pv2.ordlin
+        and pv1.ordsln = pv2.ordsln
+        and pv1.subnum = pv2.ctnnum
+join TRXWMSPRD.inventory_view iv
+on pv2.wrkref = iv.wrkref
+        and pv2.wrkref_dtl = iv.wrkref_dtl
+        and pv2.ship_line_id = iv.ship_line_id
+        and pv2.ctnnum = iv.subnum
+        and pv2.wh_id = iv.wh_id
+        and pv2.prt_client_id = iv.prt_client_id
+        and pv2.prtnum = iv.prtnum
+JOIN TRXWMSPRD.locmst lm
+on iv.wh_id = lm.wh_id
+        and iv.stoloc = lm.stoloc
+where pv1.ordnum = :ordnum
+        and pv1.wrktyp = 'K'
+        and pv1.appqty = 1
+        and lm.mov_zone_id = '10036'
+group by iv.lodnum) inPal,
+(select count(distinct pv2.ctnnum) as "Surtidos"
+from TRXWMSPRD.pckwrk_view pv1
+join TRXWMSPRD.pckwrk_view pv2
+on pv1.schbat = pv2.schbat
+        and pv1.ordnum = pv2.ordnum
+        and pv1.ordlin = pv2.ordlin
+        and pv1.ordsln = pv2.ordsln
+        and pv1.subnum = pv2.ctnnum
+join TRXWMSPRD.inventory_view iv
+on pv2.wrkref = iv.wrkref
+        and pv2.wrkref_dtl = iv.wrkref_dtl
+        and pv2.ship_line_id = iv.ship_line_id
+        and pv2.ctnnum = iv.subnum
+        and pv2.wh_id = iv.wh_id
+        and pv2.prt_client_id = iv.prt_client_id
+        and pv2.prtnum = iv.prtnum
+JOIN TRXWMSPRD.locmst lm
+on iv.wh_id = lm.wh_id
+        and iv.stoloc = lm.stoloc
+where pv1.ordnum = :ordnum
+        and pv1.wrktyp = 'K'
+        and pv1.appqty = 1
+        and lm.mov_zone_id != '10036') inPal2,
+(select count(*) "SinSurtir"
+   from TRXWMSPRD.pckwrk_view
+  where ordnum = :ordnum
+    and wrktyp = 'K'
+    and appqty = 0) "Mis";]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
 </mule>

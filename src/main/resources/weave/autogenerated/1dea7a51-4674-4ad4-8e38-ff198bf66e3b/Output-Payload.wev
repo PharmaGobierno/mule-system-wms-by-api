@@ -1,4 +1,0 @@
-%dw 2.0
-
-type auto_1dea7a51_4674_4ad4_8e38_ff198bf66e3b_Output_Payload = Array<{|  FTPCOD: String,   UOMCOD: String,   UNIDADES: Number,   LEN: Number,   WID: Number,   HGT: Number,   VOL?: Number|}>
-
