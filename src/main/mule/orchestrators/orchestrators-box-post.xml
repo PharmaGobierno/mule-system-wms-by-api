@@ -5,18 +5,49 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="orchestrators-box-main" doc:id="c74a952d-17fd-4f17-83ac-f3bad499ba41" >
-		<flow-ref doc:name="orchestrators-box-prepare-request" doc:id="cbc1f574-e8bc-41c6-a9cd-f86d715d56d4" name="orchestrators-box-prepare-request"/>
-		<flow-ref doc:name="client-db-wms-get-box" doc:id="552d1735-561e-4f9a-9963-693180c8a249" name="client-db-wms-get-box"/>
+		<flow-ref doc:name="Call to orchestrators-get-surtidos" doc:id="536f47f3-e600-47eb-84f8-8c162fd4ed4b" name="orchestrators-get-surtidos" target="surtidosResponse"/>
+		<flow-ref doc:name="Call to orchestrators-get-lpn" doc:id="a9d60b51-3fe0-47c2-80da-979ea0d441cb" name="orchestrators-get-lpn" target="responseLPN"/>
+		<flow-ref doc:name="Call to orchestrators-box-set-response" doc:id="383dc147-7380-4dea-947e-3423ca09a8ae" name="orchestrators-box-set-response"/>
 	</sub-flow>
-	<sub-flow name="orchestrators-box-prepare-request" doc:id="960ff79c-b1ca-4d13-bea0-2ab40b66f382" >
-		<ee:transform doc:name="Transform Message" doc:id="d39e0044-cb02-4952-9b74-2f2788eb704b" >
+	<sub-flow name="orchestrators-box-set-response" doc:id="54dbc305-abb6-48fb-a060-07dd9b46d3d7" >
+		<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    "lpn_pending_boxes": vars.surtidosResponse[0].SinSurtir,&#10;    "lpn_total_boxes": vars.surtidosResponse[0].Surtidos,&#10;    "lpn_assortments_pallet": vars.surtidosResponse[0].SurtidosEnPalet,&#10;    "delivery_pending_boxes": vars.responseLPN[0].SINSURTIR,&#10;    "delivery_total_boxes": vars.responseLPN[0].Surtidos,&#10;    "delivery_assortments_pallet": vars.responseLPN[0].SurtidosEnPalet&#10;}]' doc:name="Set Response" doc:id="064447c1-160a-4ce8-92b6-bf02083c3802" />
+	</sub-flow>
+	<sub-flow name="orchestrators-get-lpn" doc:id="ef790f56-a0a3-437a-a7df-5c3b48f732c3" >
+		<ee:transform doc:name="Set LPN" doc:id="d31e6538-b681-4c35-981d-bec7fcaa1c7f" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-{
-	ordnum: payload.code
-}]]></ee:set-payload>
+vars.surtidosResponse[0].LPN]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="client-db-wms-get-lpn" doc:id="9206226d-d7d1-400e-b5dd-dd652f9c55e6" name="client-db-wms-get-lpn" />
+		<ee:transform doc:name="Set Response" doc:id="016dd72a-2e2b-4178-a457-c02ac97b3ebc" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="orchestrators-get-surtidos" doc:id="f0f3dfab-4942-4501-ab14-11487a11e509" >
+		<ee:transform doc:name="Set Code" doc:id="d39e0044-cb02-4952-9b74-2f2788eb704b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.code
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="client-db-wms-get-box" doc:id="552d1735-561e-4f9a-9963-693180c8a249" name="client-db-wms-get-box" />
+		<ee:transform doc:name="Set Response" doc:id="345a0cb1-1ec5-4c5f-8607-bec6f20ef55b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</sub-flow>

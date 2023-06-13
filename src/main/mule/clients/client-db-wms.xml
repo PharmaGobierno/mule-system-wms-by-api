@@ -238,7 +238,7 @@ group by ord.ordnum,
 		</db:select>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-box" doc:id="0c31bbcd-70e6-4f4a-8546-188b92a19c4a" >
-		<db:select doc:name="Select" doc:id="99247b82-ec6d-40d6-9f8d-c8134d005366" config-ref="Database_Config_WMS_BlueYonder">
+		<db:select doc:name="Select" doc:id="f795c9d5-854c-424f-9313-820d5f45f012" config-ref="Database_Config_WMS_BlueYonder" >
 			<db:sql ><![CDATA[select *
 from
 (select count(distinct pv2.ctnnum) as "SurtidosEnPalet", 
@@ -293,8 +293,48 @@ where pv1.ordnum = :ordnum
    from TRXWMSPRD.pckwrk_view
   where ordnum = :ordnum
     and wrktyp = 'K'
-    and appqty = 0) "Mis";]]></db:sql>
-			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+    and appqty = 0) "Mis"]]></db:sql>
+			<db:input-parameters ><![CDATA[#[ordnum: payload]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="client-db-wms-get-lpn" doc:id="5aeb1db0-6d8d-472e-ad4a-678eca027890" >
+		<db:select doc:name="Select" doc:id="b95dd3ad-9484-442b-80d8-c93b9575a296" config-ref="Database_Config_WMS_BlueYonder" >
+			<db:sql ><![CDATA[select * from
+(select count(distinct pv2.ctnnum) "SurtidosEnPalet"
+   from TRXWMSPRD.pckwrk_view pv1
+   join TRXWMSPRD.pckwrk_view pv2
+     on pv1.schbat = pv2.schbat
+    and pv1.ordnum = pv2.ordnum
+    and pv1.ordlin = pv2.ordlin
+    and pv1.ordsln = pv2.ordsln
+    and pv1.subnum = pv2.ctnnum
+   join TRXWMSPRD.inventory_view iv
+     on pv2.wrkref = iv.wrkref
+    and pv2.wrkref_dtl = iv.wrkref_dtl
+    and pv2.ship_line_id = iv.ship_line_id
+    and pv2.ctnnum = iv.subnum
+    and pv2.wh_id = iv.wh_id
+    and pv2.prt_client_id = iv.prt_client_id
+    and pv2.prtnum = iv.prtnum
+   JOIN TRXWMSPRD.locmst lm
+     on iv.wh_id = lm.wh_id
+    and iv.stoloc = lm.stoloc
+  where IV.lodnum = :lodnum
+    and pv1.wrktyp = 'K'
+    and pv1.appqty = 1) a,
+(select distinct ipv.ordnum,(select count(*)
+           from TRXWMSPRD.pckwrk_view pv
+          where ipv.ordnum = pv.ordnum
+            and pv.wrktyp = 'K'
+            and appqty = 0) SinSurtir,
+        (select count(distinct ctnnum)
+           from TRXWMSPRD.inventory_pckwrk_view ipv2
+          where ipv.ordnum = ipv2.ordnum
+            and ipv2.wrktyp = 'P'
+            and ipv.lodnum != ipv2.lodnum) "Surtidos"
+   from TRXWMSPRD.inventory_pckwrk_view ipv
+  where lodnum = :lodnum) b]]></db:sql>
+			<db:input-parameters ><![CDATA[#[lodnum: payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
 </mule>
