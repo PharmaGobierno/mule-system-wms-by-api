@@ -5,12 +5,27 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="orchestrators-box-main" doc:id="c74a952d-17fd-4f17-83ac-f3bad499ba41" >
-		<flow-ref doc:name="Call to orchestrators-get-surtidos" doc:id="536f47f3-e600-47eb-84f8-8c162fd4ed4b" name="orchestrators-get-surtidos" target="surtidosResponse"/>
-		<flow-ref doc:name="Call to orchestrators-get-lpn" doc:id="a9d60b51-3fe0-47c2-80da-979ea0d441cb" name="orchestrators-get-lpn" target="responseLPN"/>
-		<flow-ref doc:name="Call to orchestrators-box-set-response" doc:id="383dc147-7380-4dea-947e-3423ca09a8ae" name="orchestrators-box-set-response"/>
+		<choice doc:name="Choice" doc:id="b830f076-8ca9-4b03-8059-7f1ac80c1f27" >
+			<when expression="#[payload.type_box == 'delivery']">
+				<flow-ref doc:name="Call to orchestrators-get-surtidos" doc:id="536f47f3-e600-47eb-84f8-8c162fd4ed4b" name="orchestrators-get-surtidos" target="surtidosResponse" />
+				<flow-ref doc:name="Call to orchestrators-get-lpn" doc:id="a9d60b51-3fe0-47c2-80da-979ea0d441cb" name="orchestrators-get-lpn" target="responseLPN" />
+				<flow-ref doc:name="Call to orchestrators-box-set-response" doc:id="383dc147-7380-4dea-947e-3423ca09a8ae" name="orchestrators-box-set-response" />
+			</when>
+			<otherwise >
+				<flow-ref doc:name="Call to orchestrators-get-lpn" doc:id="014956f5-6f9a-4e59-bdb3-d03731c1707e" name="orchestrators-get-lpn" target="responseLPN" />
+				<flow-ref doc:name="Call to orchestrators-box-set-response" doc:id="27cf93b4-0229-4065-a1da-e36130b0ca33" name="orchestrators-box-set-response" />
+			</otherwise>
+		</choice>
 	</sub-flow>
 	<sub-flow name="orchestrators-box-set-response" doc:id="54dbc305-abb6-48fb-a060-07dd9b46d3d7" >
-		<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    "lpn_pending_boxes": vars.surtidosResponse[0].SinSurtir,&#10;    "lpn_total_boxes": vars.surtidosResponse[0].Surtidos,&#10;    "lpn_assortments_pallet": vars.surtidosResponse[0].SurtidosEnPalet,&#10;    "delivery_pending_boxes": vars.responseLPN[0].SINSURTIR,&#10;    "delivery_total_boxes": vars.responseLPN[0].Surtidos,&#10;    "delivery_assortments_pallet": vars.responseLPN[0].SurtidosEnPalet&#10;}]' doc:name="Set Response" doc:id="064447c1-160a-4ce8-92b6-bf02083c3802" />
+		<choice doc:name="Choice" doc:id="a64731b8-53c8-42f8-9c46-aac902a7c249" >
+			<when expression="#[payload.type_box == 'delivery']">
+				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    lpn_pending_pick: vars.responseLPN[0].SINSURTIR,&#10;    lpn_pending_picked: vars.responseLPN[0].Surtidos,&#10;    lpn_assortments_pallet: vars.responseLPN[0].SurtidosEnPalet,&#10;    delivery_pending_pick: vars.surtidosResponse[0].SinSurtir,&#10;    delivery_pending_picked: vars.surtidosResponse[0].Surtidos,&#10;    delivery_assortments_pallet: vars.surtidosResponse[0].SurtidosEnPalet&#10;}]' doc:name="Set Response" doc:id="064447c1-160a-4ce8-92b6-bf02083c3802" />
+			</when>
+			<otherwise >
+				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    lpn_pending_pick: vars.responseLPN[0].SINSURTIR,&#10;    lpn_pending_picked: vars.responseLPN[0].Surtidos,&#10;    lpn_assortments_pallet: vars.responseLPN[0].SurtidosEnPalet,&#10;    delivery_pending_pick: "",&#10;    delivery_pending_picked: "",&#10;    delivery_assortments_pallet: ""&#10;}]' doc:name="Set Response" doc:id="71a37cef-03b6-446c-8193-e3fdfebb428a" />
+			</otherwise>
+		</choice>
 	</sub-flow>
 	<sub-flow name="orchestrators-get-lpn" doc:id="ef790f56-a0a3-437a-a7df-5c3b48f732c3" >
 		<ee:transform doc:name="Set LPN" doc:id="d31e6538-b681-4c35-981d-bec7fcaa1c7f" >
@@ -18,7 +33,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-vars.surtidosResponse[0].LPN]]></ee:set-payload>
+if(payload.type_box == 'delivery') vars.surtidosResponse[0].LPN else payload.code]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 		<flow-ref doc:name="client-db-wms-get-lpn" doc:id="9206226d-d7d1-400e-b5dd-dd652f9c55e6" name="client-db-wms-get-lpn" />

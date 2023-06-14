@@ -12,6 +12,9 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
 	<http:request-config name="Request_AWS_BlueYonder" doc:name="HTTP Request configuration" doc:id="f77dbbb1-bc5f-4065-aae2-52edd47dd3db" responseTimeout="${client.wms.blueyonder.https.response.timeout}">
 		<http:request-connection host="${client.wms.blueyonder.https.host}" port="${client.wms.blueyonder.https.port}" connectionIdleTimeout="${client.wms.blueyonder.https.connection.idle.timeout}" maxConnections="${client.wms.blueyonder.https.max.connections}" protocol="HTTPS">
+			<tls:context >
+				<tls:trust-store path="traxion_global.jks" type="jks" />
+			</tls:context>
 		</http:request-connection>
 	</http:request-config>
 	<db:config name="Database_Config_WMS_BlueYonder" doc:name="Database Config" doc:id="0eac2af5-f8d6-4bf7-b7e6-6c95990e28ec" >
