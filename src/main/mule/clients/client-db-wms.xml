@@ -6,21 +6,12 @@
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
 	<sub-flow name="client-db-wms-get-availability" doc:id="8cf9afc6-58b3-49d5-9ae7-8f8d694bb829" >
 		<db:select doc:name="Select" doc:id="efda0571-bb4f-4dc0-becb-413ac6981664" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[select prtnum sku,
-       sum(iv.untqty) disp,
-       untcas cantPzPck
-from TRXWMSPRD.inventory_view iv
-where iv.prtnum=:sku and
-              iv.wh_id='AVIOR-27'
-group by prtnum,untcas]]></db:sql>
-			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
+			<db:sql ><![CDATA[#[vars.queryAvailability]]]></db:sql>
 		</db:select>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-volumetry" doc:id="668624cb-11e6-4fec-82c9-18369b7a2669" >
 		<db:select doc:name="Select" doc:id="529895af-3d19-4897-b0bc-6f2a588a1af7" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[select prtnum, untqty, len*wid*hgt vol, netwgt, uomcod, ftpcod from TRXWMSPRD.PRTFTP_DTL 
-where prtnum in (:sku) and wh_id='AVIOR-27' ]]></db:sql>
-			<db:input-parameters ><![CDATA[#[sku:payload.sku]]]></db:input-parameters>
+			<db:sql ><![CDATA[#[vars.queryVolumetry]]]></db:sql>
 		</db:select>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-partfoot-details" doc:id="c504be1d-524e-4928-a87a-9dcb543e8e4b" >
@@ -217,24 +208,7 @@ group by ord.ordnum,
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-logistics-footprint" doc:id="1dea7a51-4674-4ad4-8e38-ff198bf66e3b" >
 		<db:select doc:name="Select" doc:id="4754006c-1203-46c8-8718-c781618ad286" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[SELECT DISTINCT iv.uomcod,/*Pallets, Pieza, Caja, */
-	iv.PRTNUM, /*codigo producto*/
-	iv.ftpcod, /*codigo huella logistica*/
-	iv.UNTQTY,
-	iv.len,
-	iv.wid,
-	iv.hgt,
-	iv.GRSWGT,
-	iv.NETWGT,
-	pr.CASLVL,
-	pr.DEFFTP_FLG,
-	iv.len*iv.wid*iv.hgt vol
-	from TRXWMSPRD.PRTFTP_DTL iv
-	inner JOIN TRXWMSPRD.PRTFTP pr
-	ON iv.FTPCOD = pr.FTPCOD
-	where iv.FTPCOD = :sku and
-	iv.wh_id='AVIOR-27']]></db:sql>
-			<db:input-parameters ><![CDATA[#[sku:payload]]]></db:input-parameters>
+			<db:sql ><![CDATA[#[vars.queryLogisticFootprint]]]></db:sql>
 		</db:select>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-box" doc:id="0c31bbcd-70e6-4f4a-8546-188b92a19c4a" >
@@ -242,7 +216,7 @@ group by ord.ordnum,
 			<db:sql ><![CDATA[select *
 from
 (select count(distinct pv2.ctnnum) as "SurtidosEnPalet", 
-        iv.lodnum LPN
+        max(iv.lodnum) LPN
 from TRXWMSPRD.pckwrk_view pv1
 join TRXWMSPRD.pckwrk_view pv2
 on pv1.schbat = pv2.schbat
@@ -264,8 +238,7 @@ on iv.wh_id = lm.wh_id
 where pv1.ordnum = :ordnum
         and pv1.wrktyp = 'K'
         and pv1.appqty = 1
-        and lm.mov_zone_id = '10036'
-group by iv.lodnum) inPal,
+        and lm.mov_zone_id = '10036') inPal,
 (select count(distinct pv2.ctnnum) as "Surtidos"
 from TRXWMSPRD.pckwrk_view pv1
 join TRXWMSPRD.pckwrk_view pv2

@@ -11,7 +11,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-payload.skus]]></ee:set-payload>
+("'" ++((payload.skus) joinBy "," ) replace "," with("','") ++ "'")]]></ee:set-payload>
 			</ee:message>
 			<ee:variables >
 				<ee:set-variable variableName="arrayAux" ><![CDATA[%dw 2.0
@@ -20,27 +20,19 @@ output application/json
 []]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<foreach doc:name="For Each" doc:id="27f2bc46-b783-48e2-835a-ddaabaeb2245" >
-			<flow-ref doc:name="Call to client-db-wms-get-availability" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-availability" />
-			<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
-			<ee:transform doc:name="++ arrayAux" doc:id="3ac48490-4f7e-4abb-a8b1-af2b09165b9e" >
-				<ee:message />
-				<ee:variables >
-					<ee:set-variable variableName="arrayAux" ><![CDATA[%dw 2.0
-output application/json
----
-vars.arrayAux + payload]]></ee:set-variable>
-				</ee:variables>
-			</ee:transform>
-		</foreach>
-		<ee:transform doc:name="Set response" doc:id="b1de3416-419c-4026-a137-9f59e25b4a8c" >
+		<ee:transform doc:name="Set Query" doc:id="939217c8-13bb-494b-b028-dd5993a95f9b" >
 			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="queryAvailability" ><![CDATA[%dw 2.0
 output application/json
 ---
-flatten(vars.arrayAux)]]></ee:set-payload>
-			</ee:message>
+"select prtnum, untqty, len*wid*hgt vol, netwgt, uomcod, ftpcod from TRXWMSPRD.PRTFTP_DTL 
+where prtnum in (" ++ payload ++ ") and wh_id='AVIOR-27'"]]></ee:set-variable>
+			</ee:variables>
 		</ee:transform>
+		<flow-ref doc:name="Call to client-db-wms-get-availability" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-availability" />
+		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
 		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" />
 	</sub-flow>
 </mule>
