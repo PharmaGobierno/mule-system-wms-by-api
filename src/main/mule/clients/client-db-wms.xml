@@ -310,4 +310,16 @@ where pv1.ordnum = :ordnum
 			<db:input-parameters ><![CDATA[#[lodnum: payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
+	<sub-flow name="client-db-wms-get-download-sequence" doc:id="15cef186-5c0b-4b19-bd30-fd34144e7faa" >
+		<db:select doc:name="Select" doc:id="b72ccc08-b40d-464d-a750-8a93706f1e62" config-ref="Database_Config_WMS_BlueYonder" >
+			<db:sql ><![CDATA[select distinct TRXWMSPRD.sl_dwnld.*
+   from TRXWMSPRD.sl_ifd_data_dtl
+   join TRXWMSPRD.sl_ifd_data_hdr
+     on TRXWMSPRD.sl_ifd_data_hdr.ifd_data_seq = sl_ifd_data_dtl.ifd_data_seq
+   join TRXWMSPRD.sl_dwnld
+     on TRXWMSPRD.sl_dwnld.dwnld_seq = sl_ifd_data_hdr.dwnld_seq
+  where TRXWMSPRD.sl_dwnld.DWNLD_SEQ like :downloadSequence]]></db:sql>
+			<db:input-parameters ><![CDATA[#[downloadSequence: "%" ++ payload ++ "%"]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
 </mule>

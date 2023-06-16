@@ -5,7 +5,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="orchestrators-update-availability" doc:id="9de8a181-03dc-4282-8646-dec20083d7c8" >
-		<logger level="INFO" doc:name="Payload" doc:id="4153579e-e855-471f-bd59-07630cedd630" message="payloadXML: #[payload] " />
+<!-- [STUDIO:"Payload"]		<logger level="INFO" doc:name="Payload" doc:id="4153579e-e855-471f-bd59-07630cedd630" message="payloadXML: #[payload] " /> [STUDIO] -->
 		<ee:transform doc:name="get Skus" doc:id="c7a34687-61f3-4324-b958-cd1dcfbd1680" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -27,12 +27,17 @@ output application/json
 				<ee:set-variable variableName="queryAvailability" ><![CDATA[%dw 2.0
 output application/json
 ---
-"select prtnum, untqty, len*wid*hgt vol, netwgt, uomcod, ftpcod from TRXWMSPRD.PRTFTP_DTL 
-where prtnum in (" ++ payload ++ ") and wh_id='AVIOR-27'"]]></ee:set-variable>
+"select prtnum sku,
+        sum(iv.untqty) disp,
+        untcas cantPzPck
+ from TRXWMSPRD.inventory_view iv
+	 where iv.prtnum in (" ++ payload ++") and
+               iv.wh_id='AVIOR-27'
+ group by prtnum,untcas"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-availability" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-availability" />
 		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
-		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" />
+<!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" /> [STUDIO] -->
 	</sub-flow>
 </mule>

@@ -3,7 +3,7 @@
     <http:listener-config name="system-wms-by-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS" tlsContext="TLS_Context" />
     </http:listener-config>
-    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.7:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.8:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="system-wms-by-api-main">
         <http:listener config-ref="system-wms-by-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -161,6 +161,9 @@ output application/json
         <flow-ref doc:name="Call to orchestrators-box-quantity" doc:id="54fcd5b6-1449-45e5-8e93-cc0feecda1ba" name="orchestrators-box-quantity" />
     </flow>
     <flow name="post:\wms\box:application\json:system-wms-by-api-config">
-		<flow-ref doc:name="orchestrators-box-main" doc:id="7ef8aef2-61fa-4c95-89cc-a07554ef2ce4" name="orchestrators-box-main"/>
+        <flow-ref doc:name="orchestrators-box-main" doc:id="7ef8aef2-61fa-4c95-89cc-a07554ef2ce4" name="orchestrators-box-main" />
+    </flow>
+    <flow name="get:\wms\download_sequence:system-wms-by-api-config">
+        <flow-ref doc:name="Call to orchestrators-shipment-status" doc:id="6f6b82d4-cf73-4596-95c1-577e036ecde9" name="orchestrators-shipment-status"/>
     </flow>
 </mule>

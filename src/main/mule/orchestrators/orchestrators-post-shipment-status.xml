@@ -4,14 +4,14 @@
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-	<sub-flow name="orchestrators-logistics-footprint" doc:id="9de8a181-03dc-4282-8646-dec20083d7c8" >
+	<sub-flow name="orchestrators-shipment-status" doc:id="9de8a181-03dc-4282-8646-dec20083d7c8" >
 <!-- [STUDIO:"Payload"]		<logger level="INFO" doc:name="Payload" doc:id="4153579e-e855-471f-bd59-07630cedd630" message="payloadXML: #[payload] " /> [STUDIO] -->
-		<ee:transform doc:name="get Skus" doc:id="c7a34687-61f3-4324-b958-cd1dcfbd1680" >
+		<ee:transform doc:name="get Download Sequence" doc:id="c7a34687-61f3-4324-b958-cd1dcfbd1680" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-"'" ++((payload.skus) joinBy "," ) replace "," with("','") ++ "'"]]></ee:set-payload>
+attributes.queryParams.download_sequence]]></ee:set-payload>
 			</ee:message>
 			<ee:variables >
 				<ee:set-variable variableName="arrayAux" ><![CDATA[%dw 2.0
@@ -20,33 +20,7 @@ output application/json
 []]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<ee:transform doc:name="Set Query" doc:id="eb7c4d02-f43b-4a12-8ad3-a0e0386691e2">
-			<ee:message />
-			<ee:variables>
-				<ee:set-variable variableName="queryLogisticFootprint" ><![CDATA[%dw 2.0
-output application/json
----
-"SELECT DISTINCT iv.uomcod,/*Pallets, Pieza, Caja, */
-	iv.PRTNUM, /*codigo producto*/
-	iv.ftpcod, /*codigo huella logistica*/
-	iv.UNTQTY,
-	iv.len,
-	iv.wid,
-	iv.hgt,
-	iv.GRSWGT,
-	iv.NETWGT,
-	pr.CASLVL,
-	pr.DEFFTP_FLG,
-	iv.len*iv.wid*iv.hgt vol
-	from TRXWMSPRD.PRTFTP_DTL iv
-	inner JOIN TRXWMSPRD.PRTFTP pr
-	ON iv.FTPCOD = pr.FTPCOD
-	where iv.FTPCOD in (" ++ payload ++ ") and
-	iv.wh_id='AVIOR-27'"
-]]></ee:set-variable>
-			</ee:variables>
-		</ee:transform>
-		<flow-ref doc:name="Call to client-get-availability-db-wms-get-logistics-footprint" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-logistics-footprint" />
+		<flow-ref doc:name="Call to client-db-wms-get-download-sequence" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-download-sequence" />
 		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
 <!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" /> [STUDIO] -->
 	</sub-flow>
