@@ -27,23 +27,44 @@ output application/json
 				<ee:set-variable variableName="queryAvailability" ><![CDATA[%dw 2.0
 output application/json
 ---
-"select prtnum sku,
-        sum(iv.untqty) disp,
-        iv.untpak cantPzPck,
-        round(sum(iv.untqty) / iv.untpak) packdisp
-   from inventory_view iv
-   join locmst lm
+"select iv.prtnum sku,
+        sum(iv.untqty) - nvl((select sum(pwv.pckqty - pwv.appqty)
+                                from TRXWMSPRD.pckwrk_view pwv
+                               where pwv.prtnum = iv.prtnum
+                                 and pwv.appqty < pwv.pckqty
+                                 and iv.untcas = pwv.untcas
+                                 and pwv.wrktyp = 'P'), 0) disp,
+        (CASE WHEN iv.untpak = 1 then iv.untcas
+              ELSE iv.untpak
+         END) cantPzPck,
+        round(((sum(iv.untqty) - nvl((select sum(pwv.pckqty - pwv.appqty)
+                                        from TRXWMSPRD.pckwrk_view pwv
+                                       where pwv.prtnum = iv.prtnum
+                                         and pwv.appqty < pwv.pckqty
+                                         and iv.untcas = pwv.untcas
+                                         and pwv.wrktyp = 'P'), 0)) / (CASE WHEN iv.untpak = 1 then iv.untcas
+                                                                            ELSE iv.untpak
+                                                                       END))) packdisp,
+        nvl((select sum(pwv.pckqty - pwv.appqty)
+               from TRXWMSPRD.pckwrk_view pwv
+              where pwv.prtnum = iv.prtnum
+                and pwv.appqty < pwv.pckqty
+                and iv.untcas = pwv.untcas
+                and pwv.wrktyp = 'P'), 0) comp
+   from TRXWMSPRD.inventory_view iv
+   join TRXWMSPRD.locmst lm
      on lm.stoloc = iv.stoloc
     and lm.wh_id = iv.wh_id
-   join loc_typ lt
+   join TRXWMSPRD.loc_typ lt
      on lm.loc_typ_id = lt.loc_typ_id
     and lm.wh_id = lt.wh_id
   where iv.prtnum in (" ++ payload ++")
     and iv.wh_id = 'AVIOR-27'
     and lt.fwiflg = 1
-    and iv.untpak > 1
     and iv.ship_line_id is null
-  group by prtnum,untpak"]]></ee:set-variable>
+  group by iv.prtnum,
+        iv.untpak,
+        iv.untcas"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-availability" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-availability" />
