@@ -295,18 +295,21 @@ where pv1.ordnum = :ordnum
   where IV.lodnum = :lodnum
     and pv1.wrktyp = 'K'
     and pv1.appqty = 1) a,
-(select distinct ipv.ordnum,(select count(*)
-           from TRXWMSPRD.pckwrk_view pv
-          where ipv.ordnum = pv.ordnum
-            and pv.wrktyp = 'K'
-            and appqty = 0) SinSurtir,
-        (select count(distinct ctnnum)
-           from TRXWMSPRD.inventory_pckwrk_view ipv2
-          where ipv.ordnum = ipv2.ordnum
-            and ipv2.wrktyp = 'P'
-            and ipv.lodnum != ipv2.lodnum) "Surtidos"
-   from TRXWMSPRD.inventory_pckwrk_view ipv
-  where lodnum = :lodnum) b]]></db:sql>
+(select count(*) SinSurtir
+   from TRXWMSPRD.pckwrk_view pv
+   join TRXWMSPRD.inventory_pckwrk_view ipv
+     on pv.ordnum = ipv.ordnum
+    and ipv.lodnum != pv.lodnum
+  where pv.wrktyp = 'K'
+    and pv.appqty = 0
+    and ipv.lodnum = :lodnum) b,
+(select count(distinct ipv2.ctnnum) Surtidos
+   from TRXWMSPRD.inventory_pckwrk_view ipv2
+   join TRXWMSPRD.inventory_pckwrk_view ipv
+     on ipv2.ordnum = ipv.ordnum
+    and ipv.lodnum != ipv2.lodnum
+  where ipv2.wrktyp = 'P'
+    and ipv.lodnum = :lodnum) c]]></db:sql>
 			<db:input-parameters ><![CDATA[#[lodnum: payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>

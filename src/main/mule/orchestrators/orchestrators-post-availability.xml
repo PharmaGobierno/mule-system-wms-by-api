@@ -34,7 +34,7 @@ output application/json
                                  and pwv.appqty < pwv.pckqty
                                  and iv.untcas = pwv.untcas
                                  and pwv.wrktyp = 'P'), 0) disp,
-        (CASE WHEN iv.untpak = 1 then iv.untcas
+        (CASE WHEN iv.untpak = 1 then 1
               ELSE iv.untpak
          END) cantPzPck,
         round(((sum(iv.untqty) - nvl((select sum(pwv.pckqty - pwv.appqty)
@@ -42,7 +42,7 @@ output application/json
                                        where pwv.prtnum = iv.prtnum
                                          and pwv.appqty < pwv.pckqty
                                          and iv.untcas = pwv.untcas
-                                         and pwv.wrktyp = 'P'), 0)) / (CASE WHEN iv.untpak = 1 then iv.untcas
+                                         and pwv.wrktyp = 'P'), 0)) / (CASE WHEN iv.untpak = 1 then 1
                                                                             ELSE iv.untpak
                                                                        END))) packdisp,
         nvl((select sum(pwv.pckqty - pwv.appqty)
