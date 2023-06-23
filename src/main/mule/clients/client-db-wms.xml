@@ -273,7 +273,7 @@ where pv1.ordnum = :ordnum
 	<sub-flow name="client-db-wms-get-lpn" doc:id="5aeb1db0-6d8d-472e-ad4a-678eca027890" >
 		<db:select doc:name="Select" doc:id="b95dd3ad-9484-442b-80d8-c93b9575a296" config-ref="Database_Config_WMS_BlueYonder" >
 			<db:sql ><![CDATA[select * from
-(select count(distinct pv2.ctnnum) "SurtidosEnPalet"
+(select count(distinct pv2.ctnnum) "SURTIDOSENPALET"
    from TRXWMSPRD.pckwrk_view pv1
    join TRXWMSPRD.pckwrk_view pv2
      on pv1.schbat = pv2.schbat
