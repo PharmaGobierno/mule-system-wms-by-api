@@ -325,4 +325,9 @@ where pv1.ordnum = :ordnum
 			<db:input-parameters ><![CDATA[#[downloadSequence: "%" ++ payload ++ "%"]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
+	<sub-flow name="client-db-wms-daily-balance-sp" doc:id="65b13491-4f77-497b-8efe-62dd55b9ff04" >
+		<db:stored-procedure doc:name="Stored procedure" doc:id="908312f3-8c40-4271-9e46-d4e16dd6b4cd" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[{ call DAILY_INVENTORY_UPDATE }]]></db:sql>
+		</db:stored-procedure>
+	</sub-flow>
 </mule>
