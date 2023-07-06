@@ -26,22 +26,23 @@ output application/json
 				<ee:set-variable variableName="queryLogisticFootprint" ><![CDATA[%dw 2.0
 output application/json
 ---
-"SELECT DISTINCT iv.uomcod,/*Pallets, Pieza, Caja, */
-	iv.PRTNUM, /*codigo producto*/
-	iv.ftpcod, /*codigo huella logistica*/
-	iv.UNTQTY,
-	iv.len,
-	iv.wid,
-	iv.hgt,
-	iv.GRSWGT,
-	iv.NETWGT,
-	pr.CASLVL,
-	pr.DEFFTP_FLG,
-	iv.len*iv.wid*iv.hgt vol
-	from TRXWMSPRD.PRTFTP_DTL iv
-	inner JOIN TRXWMSPRD.PRTFTP pr
-	ON iv.FTPCOD = pr.FTPCOD
-	where iv.FTPCOD in (" ++ payload ++ ") and
+"SELECT 
+    iv.uomcod,/*Pallets, Pieza, Caja, */
+    iv.prtnum, /*codigo producto*/
+    iv.ftpcod, /*codigo huella logistica*/
+    iv.untqty,
+    iv.len,
+    iv.wid,
+    iv.hgt,
+    iv.grswgt,
+    iv.netwgt,
+    pftpc.defftp_flg,
+    pftpc.caslvl,
+    iv.len * iv.wid * iv.hgt vol
+FROM trxwmsprd.prtftp_dtl iv,
+    (SELECT p.ftpcod, p.caslvl, p.defftp_flg FROM trxwmsprd.prtftp p  WHERE  p.wh_id = 'AVIOR-27') pftpc
+WHERE iv.ftpcod = pftpc.ftpcod
+    AND iv.ftpcod IN ( '" ++ payload ++ ") and
 	iv.wh_id='AVIOR-27'"
 ]]></ee:set-variable>
 			</ee:variables>
