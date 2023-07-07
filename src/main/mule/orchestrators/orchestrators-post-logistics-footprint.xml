@@ -42,7 +42,7 @@ output application/json
 FROM trxwmsprd.prtftp_dtl iv,
     (SELECT p.ftpcod, p.caslvl, p.defftp_flg FROM trxwmsprd.prtftp p  WHERE  p.wh_id = 'AVIOR-27') pftpc
 WHERE iv.ftpcod = pftpc.ftpcod
-    AND iv.ftpcod IN ( '" ++ payload ++ ") and
+    AND iv.ftpcod IN ( " ++ payload ++ ") and
 	iv.wh_id='AVIOR-27'"
 ]]></ee:set-variable>
 			</ee:variables>
