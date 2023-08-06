@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_1c432385_7ad5_4037_bfc1_b691d0544fff_Output_Payload = Array<{| "SUM(SUMAS.SUMA)"?: Number |}>
+

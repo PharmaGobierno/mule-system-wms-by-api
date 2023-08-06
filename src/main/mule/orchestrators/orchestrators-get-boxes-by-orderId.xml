@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrators-get-boxes-by-orderId-main" doc:id="b2450a64-9d0a-4b39-ad5a-ec0214b9470b" >
+		<flow-ref doc:name="client-db-wms-cajas-carton-order" doc:id="20daf094-882a-4a33-9f39-7c72d82de4e4" name="client-db-wms-cajas-carton-order"/>
+		<flow-ref doc:name="client-db-wms-cajas-listas-order" doc:id="64ede0cc-56b3-4399-9545-ca7645343eea" name="client-db-wms-cajas-listas-order"/>
+		<ee:transform doc:name="Transform Message" doc:id="e3083ea6-05aa-4906-887b-94141cd738cd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	orderId: vars.orderId,
+	cajas_carton: vars.cajas_carton[0].'COUNT(DISTINCTALL_INVENTORY_VIEW.SUBNUM)',
+	cajas_listas: vars.cajas_listas[0].'SUM(SUMAS.SUMA)'
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>

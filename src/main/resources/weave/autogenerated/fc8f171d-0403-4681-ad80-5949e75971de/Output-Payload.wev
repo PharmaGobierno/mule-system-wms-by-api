@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_fc8f171d_0403_4681_ad80_5949e75971de_Output_Payload = Array<{| "COUNT(DISTINCTALL_INVENTORY_VIEW.SUBNUM)"?: Number |}>
+
