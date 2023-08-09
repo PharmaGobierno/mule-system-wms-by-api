@@ -316,8 +316,20 @@ where pv1.ordnum = :ordnum
 		</db:select>
 	</sub-flow>
 	<sub-flow name="client-db-wms-cajas-carton-order" doc:id="fc8f171d-0403-4681-ad80-5949e75971de" >
-		<db:select doc:name="Select" doc:id="7ff12290-20a1-41fe-b693-5a795404c521" config-ref="Database_Config_WMS_BlueYonder" target="cajas_carton">
-			<db:sql ><![CDATA[select count(distinct all_inventory_view.subnum) 
+		<db:select doc:name="Select" doc:id="7ff12290-20a1-41fe-b693-5a795404c521" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[select (select distinct cr.car_move_id
+           from TRXWMSPRD.all_inventory_view aiv
+           join TRXWMSPRD.shipment_line sl
+             on aiv.ship_line_id = sl.ship_line_id
+           join TRXWMSPRD.shipment sh
+             on sh.ship_id = sl.ship_id
+           join TRXWMSPRD.stop st
+             on st.stop_id = sh.stop_id
+           join TRXWMSPRD.car_move cr
+             on cr.car_move_id = st.car_move_id
+          where lodnum = :lodnum
+            and rownum = 1) carga,
+        (select count(distinct all_inventory_view.subnum) 
        from TRXWMSPRD.car_move
        join TRXWMSPRD.stop
          on stop.car_move_id = car_move.car_move_id
@@ -347,15 +359,25 @@ where pv1.ordnum = :ordnum
          on prtfamgrp_dsc.colnam = /*#nobind*/ 'prtfamgrp' /*#bind*/
         and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
         and prtfamgrp_dsc.locale_id = 'ES-ES'
-      where shipment_line.ordnum = :orderId
-        and all_inventory_view.wh_id = 'AVIOR-27'
-        and (all_inventory_view.phyflg = 1)]]></db:sql>
-			<db:input-parameters ><![CDATA[#[orderId: vars.orderId]]]></db:input-parameters>
-		</db:select>
-	</sub-flow>
-	<sub-flow name="client-db-wms-cajas-listas-order" doc:id="1c432385-7ad5-4037-bfc1-b691d0544fff" >
-		<db:select doc:name="Select" doc:id="ab7eb1db-7cfa-40d2-ad1e-84ea62e117a6" config-ref="Database_Config_WMS_BlueYonder" target="cajas_listas">
-			<db:sql ><![CDATA[select sum(sumas.suma)
+       join TRXWMSPRD.locmst
+         on locmst.stoloc = all_inventory_view.stoloc
+        and locmst.mov_zone_id = '10038'
+      where all_inventory_view.wh_id = 'AVIOR-27'
+        /*and shipment_line.ordnum = :ordnum*/
+        and car_move.car_move_id = (select distinct cr.car_move_id
+                           from TRXWMSPRD.all_inventory_view aiv
+                           join TRXWMSPRD.shipment_line sl
+                             on aiv.ship_line_id = sl.ship_line_id
+                           join TRXWMSPRD.shipment sh
+                             on sh.ship_id = sl.ship_id
+                           join TRXWMSPRD.stop st
+                             on st.stop_id = sh.stop_id
+                           join TRXWMSPRD.car_move cr
+                             on cr.car_move_id = st.car_move_id
+                          where lodnum = :lodnum)
+        and (all_inventory_view.phyflg = 1)) +
+        
+(select nvl(sum(sumas.suma),0)
        from (select ceil((select sum(lod1.untqty / lod1.untcas)
                             from TRXWMSPRD.all_inventory_view lod1
                            where lod1.subnum = all_inventory_view.subnum)) as suma,
@@ -411,12 +433,225 @@ where pv1.ordnum = :ordnum
                  on prtfamgrp_dsc.colnam = /*#nobind*/ 'prtfamgrp' /*#bind*/
                 and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
                 and prtfamgrp_dsc.locale_id = 'ES-ES'
+               join TRXWMSPRD.locmst
+                 on locmst.stoloc = all_inventory_view.stoloc
+                and locmst.mov_zone_id = '10038'
               where ord.wh_id = 'AVIOR-27'
-                AND shipment_line1.ordnum = '102-0000000300'
+                /*AND shipment_line1.ordnum = :ordnum*/
+                and car_move2.car_move_id = (select distinct cr.car_move_id
+                           from TRXWMSPRD.all_inventory_view aiv
+                           join TRXWMSPRD.shipment_line sl
+                             on aiv.ship_line_id = sl.ship_line_id
+                           join TRXWMSPRD.shipment sh
+                             on sh.ship_id = sl.ship_id
+                           join TRXWMSPRD.stop st
+                             on st.stop_id = sh.stop_id
+                           join TRXWMSPRD.car_move cr
+                             on cr.car_move_id = st.car_move_id
+                          where lodnum = :lodnum)
                 and all_inventory_view.phyflg = 0
               group by all_inventory_view.subnum,
-                    prtfam.prtfamgrp) sumas]]></db:sql>
-			<db:input-parameters ><![CDATA[#[orderId: vars.orderId]]]></db:input-parameters>
+                    prtfam.prtfamgrp) sumas) cajas_consolidadas,
+(select nvl(sum(sumas.suma),0)
+       from (select ceil((select sum(lod1.untqty / lod1.untcas)
+                            from TRXWMSPRD.all_inventory_view lod1
+                           where lod1.subnum = all_inventory_view.subnum)) as suma,
+                    prtfam.prtfamgrp
+               from TRXWMSPRD.ord
+               join TRXWMSPRD.shipment_line shipment_line1
+                 on shipment_line1.ordnum = ord.ordnum
+                and shipment_line1.client_id = ord.client_id
+                and shipment_line1.wh_id = ord.wh_id
+               join TRXWMSPRD.shipment
+                 on shipment.ship_id = shipment_line1.ship_id
+                and shipment.wh_id = shipment_line1.wh_id
+               join TRXWMSPRD.all_inventory_view
+                 on all_inventory_view.ship_line_id = shipment_line1.ship_line_id
+                and all_inventory_view.wh_id = shipment_line1.wh_id
+                and all_inventory_view.prtnum = shipment_line1.prtnum
+                and all_inventory_view.prt_client_id = shipment_line1.prt_client_id
+               join TRXWMSPRD.stop stop_2
+                 on stop_2.stop_id = shipment.stop_id
+               join TRXWMSPRD.car_move car_move2
+                 on car_move2.car_move_id = stop_2.car_move_id
+               left
+               join TRXWMSPRD.trlr
+                 on trlr.trlr_id = car_move2.trlr_id
+               join TRXWMSPRD.cstmst
+                 on cstmst.cstnum = ord.stcust
+               join TRXWMSPRD.adrmst
+                 on adrmst.adr_id = cstmst.adr_id
+               join TRXWMSPRD.prtmst prt1
+                 on prt1.prtnum = all_inventory_view.prtnum
+                and prt1.prt_client_id = all_inventory_view.prt_client_id
+                and prt1.wh_id_tmpl = all_inventory_view.wh_id
+               join TRXWMSPRD.dscmst
+                 on colnam = /*#nobind*/ 'ordtyp|wh_id' /*#bind*/
+                and colval = /*=varchar(*/ nvl(ord.ordtyp, rtrim(' ')) || '|' || nvl(ord.wh_id, rtrim(' ')) /*=)*/ /*#bind*/
+                and dscmst.locale_id = 'ES-ES'
+               join TRXWMSPRD.ord_line
+                 on ord_line.client_id = ord.client_id
+                and ord_line.ordnum = ord.ordnum
+                and ord_line.wh_id = ord.wh_id
+                and ord_line.client_id = shipment_line1.client_id
+                and ord_line.ordnum = shipment_line1.ordnum
+                and ord_line.ordlin = shipment_line1.ordlin
+                and ord_line.ordsln = shipment_line1.ordsln
+                and ord_line.wh_id = shipment_line1.wh_id
+                and ord_line.prt_client_id = shipment_line1.prt_client_id
+                and ord_line.prtnum = shipment_line1.prtnum
+               join TRXWMSPRD.prtfam
+                 on prtfam.prtfam = prt1.prtfam
+               join TRXWMSPRD.prtfam_grp
+                 on prtfam_grp.prtfamgrp = prtfam.prtfamgrp
+               join TRXWMSPRD.dscmst prtfamgrp_dsc
+                 on prtfamgrp_dsc.colnam = /*#nobind*/ 'prtfamgrp' /*#bind*/
+                and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
+                and prtfamgrp_dsc.locale_id = 'ES-ES'
+               join TRXWMSPRD.locmst
+                 on locmst.stoloc = all_inventory_view.stoloc
+                and locmst.mov_zone_id <> '10038'
+                and locmst.stoloc not like 'TRL%'
+              where ord.wh_id = 'AVIOR-27'
+                /*AND shipment_line1.ordnum = :ordnum*/
+                and car_move2.car_move_id = (select distinct cr.car_move_id
+                           from TRXWMSPRD.all_inventory_view aiv
+                           join TRXWMSPRD.shipment_line sl
+                             on aiv.ship_line_id = sl.ship_line_id
+                           join TRXWMSPRD.shipment sh
+                             on sh.ship_id = sl.ship_id
+                           join TRXWMSPRD.stop st
+                             on st.stop_id = sh.stop_id
+                           join TRXWMSPRD.car_move cr
+                             on cr.car_move_id = st.car_move_id
+                          where lodnum = :lodnum)
+                and all_inventory_view.phyflg = 0
+              group by all_inventory_view.subnum,
+                    prtfam.prtfamgrp) sumas) cajas_no_consolidadas,
+(select count(distinct all_inventory_view.subnum) 
+       from TRXWMSPRD.car_move
+       join TRXWMSPRD.stop
+         on stop.car_move_id = car_move.car_move_id
+       join TRXWMSPRD.shipment
+         on shipment.stop_id = stop.stop_id
+       join TRXWMSPRD.shipment_line
+         on shipment_line.ship_id = shipment.ship_id
+       left
+       join TRXWMSPRD.all_inventory_view
+         on all_inventory_view.ship_line_id = shipment_line.ship_line_id
+        and all_inventory_view.wh_id = shipment_line.wh_id
+        and all_inventory_view.wh_id = shipment.wh_id
+       join TRXWMSPRD.prtmst
+         on all_inventory_view.prtnum = prtmst.prtnum
+        and all_inventory_view.prt_client_id = prtmst.prt_client_id
+        and all_inventory_view.wh_id = prtmst.wh_id_tmpl
+       join TRXWMSPRD.prtfam
+         on prtfam.prtfam = prtmst.prtfam
+       join TRXWMSPRD.prtfam_grp
+         on prtfam_grp.prtfamgrp = prtfam.prtfamgrp
+       left
+       join TRXWMSPRD.prtdsc
+         on prtdsc.colnam = /*#nobind*/ 'prtnum|prt_client_id|wh_id_tmpl' /*#bind*/
+        and prtdsc.colval = prtmst.prtnum || '|' || prtmst.prt_client_id || '|' || prtmst.wh_id_tmpl
+        and prtdsc.locale_id = /*#nobind*/ 'ES-ES' /*#bind*/
+       join TRXWMSPRD.dscmst prtfamgrp_dsc
+         on prtfamgrp_dsc.colnam = /*#nobind*/ 'prtfamgrp' /*#bind*/
+        and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
+        and prtfamgrp_dsc.locale_id = 'ES-ES'
+       join TRXWMSPRD.locmst
+         on locmst.stoloc = all_inventory_view.stoloc
+        and locmst.stoloc like 'TRL%'
+      where all_inventory_view.wh_id = 'AVIOR-27'
+        /*and shipment_line.ordnum = :ordnum*/
+        and car_move.car_move_id = (select distinct cr.car_move_id
+                           from TRXWMSPRD.all_inventory_view aiv
+                           join TRXWMSPRD.shipment_line sl
+                             on aiv.ship_line_id = sl.ship_line_id
+                           join TRXWMSPRD.shipment sh
+                             on sh.ship_id = sl.ship_id
+                           join TRXWMSPRD.stop st
+                             on st.stop_id = sh.stop_id
+                           join TRXWMSPRD.car_move cr
+                             on cr.car_move_id = st.car_move_id
+                          where lodnum = :lodnum)
+        and (all_inventory_view.phyflg = 1)) +
+(select nvl(sum(sumas.suma),0)
+       from (select ceil((select sum(lod1.untqty / lod1.untcas)
+                            from TRXWMSPRD.all_inventory_view lod1
+                           where lod1.subnum = all_inventory_view.subnum)) as suma,
+                    prtfam.prtfamgrp
+               from TRXWMSPRD.ord
+               join TRXWMSPRD.shipment_line shipment_line1
+                 on shipment_line1.ordnum = ord.ordnum
+                and shipment_line1.client_id = ord.client_id
+                and shipment_line1.wh_id = ord.wh_id
+               join TRXWMSPRD.shipment
+                 on shipment.ship_id = shipment_line1.ship_id
+                and shipment.wh_id = shipment_line1.wh_id
+               join TRXWMSPRD.all_inventory_view
+                 on all_inventory_view.ship_line_id = shipment_line1.ship_line_id
+                and all_inventory_view.wh_id = shipment_line1.wh_id
+                and all_inventory_view.prtnum = shipment_line1.prtnum
+                and all_inventory_view.prt_client_id = shipment_line1.prt_client_id
+               join TRXWMSPRD.stop stop_2
+                 on stop_2.stop_id = shipment.stop_id
+               join TRXWMSPRD.car_move car_move2
+                 on car_move2.car_move_id = stop_2.car_move_id
+               left
+               join TRXWMSPRD.trlr
+                 on trlr.trlr_id = car_move2.trlr_id
+               join TRXWMSPRD.cstmst
+                 on cstmst.cstnum = ord.stcust
+               join TRXWMSPRD.adrmst
+                 on adrmst.adr_id = cstmst.adr_id
+               join TRXWMSPRD.prtmst prt1
+                 on prt1.prtnum = all_inventory_view.prtnum
+                and prt1.prt_client_id = all_inventory_view.prt_client_id
+                and prt1.wh_id_tmpl = all_inventory_view.wh_id
+               join TRXWMSPRD.dscmst
+                 on colnam = /*#nobind*/ 'ordtyp|wh_id' /*#bind*/
+                and colval = /*=varchar(*/ nvl(ord.ordtyp, rtrim(' ')) || '|' || nvl(ord.wh_id, rtrim(' ')) /*=)*/ /*#bind*/
+                and dscmst.locale_id = 'ES-ES'
+               join TRXWMSPRD.ord_line
+                 on ord_line.client_id = ord.client_id
+                and ord_line.ordnum = ord.ordnum
+                and ord_line.wh_id = ord.wh_id
+                and ord_line.client_id = shipment_line1.client_id
+                and ord_line.ordnum = shipment_line1.ordnum
+                and ord_line.ordlin = shipment_line1.ordlin
+                and ord_line.ordsln = shipment_line1.ordsln
+                and ord_line.wh_id = shipment_line1.wh_id
+                and ord_line.prt_client_id = shipment_line1.prt_client_id
+                and ord_line.prtnum = shipment_line1.prtnum
+               join TRXWMSPRD.prtfam
+                 on prtfam.prtfam = prt1.prtfam
+               join TRXWMSPRD.prtfam_grp
+                 on prtfam_grp.prtfamgrp = prtfam.prtfamgrp
+               join TRXWMSPRD.dscmst prtfamgrp_dsc
+                 on prtfamgrp_dsc.colnam = /*#nobind*/ 'prtfamgrp' /*#bind*/
+                and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
+                and prtfamgrp_dsc.locale_id = 'ES-ES'
+               join TRXWMSPRD.locmst
+                 on locmst.stoloc = all_inventory_view.stoloc
+                and locmst.stoloc like 'TRL%'
+              where ord.wh_id = 'AVIOR-27'
+                /*AND shipment_line1.ordnum = :ordnum*/
+                and car_move2.car_move_id = (select distinct cr.car_move_id
+                           from TRXWMSPRD.all_inventory_view aiv
+                           join TRXWMSPRD.shipment_line sl
+                             on aiv.ship_line_id = sl.ship_line_id
+                           join TRXWMSPRD.shipment sh
+                             on sh.ship_id = sl.ship_id
+                           join TRXWMSPRD.stop st
+                             on st.stop_id = sh.stop_id
+                           join TRXWMSPRD.car_move cr
+                             on cr.car_move_id = st.car_move_id
+                          where lodnum = :lodnum)
+                and all_inventory_view.phyflg = 0
+              group by all_inventory_view.subnum,
+                    prtfam.prtfamgrp) sumas) cajas_cargadas
+from dual]]></db:sql>
+			<db:input-parameters ><![CDATA[#[lodnum: vars.lodnum]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-download-sequence" doc:id="15cef186-5c0b-4b19-bd30-fd34144e7faa" >

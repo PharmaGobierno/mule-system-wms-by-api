@@ -3,7 +3,7 @@
     <http:listener-config name="system-wms-by-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS" tlsContext="TLS_Context" />
     </http:listener-config>
-    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.10:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.12:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="system-wms-by-api-main">
         <http:listener config-ref="system-wms-by-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -166,82 +166,12 @@ output application/json
     <flow name="get:\wms\download_sequence:system-wms-by-api-config">
         <flow-ref doc:name="Call to orchestrators-shipment-status" doc:id="6f6b82d4-cf73-4596-95c1-577e036ecde9" name="orchestrators-shipment-status" />
     </flow>
-    <flow name="get:\wms\order\(orderId)\box:system-wms-by-api-config">
+    <flow name="get:\wms\order\(lodnum)\box:system-wms-by-api-config">
         <ee:transform>
             <ee:variables>
-                <ee:set-variable variableName="orderId">attributes.uriParams.'orderId'</ee:set-variable>
+                <ee:set-variable variableName="lodnum">attributes.uriParams.'lodnum'</ee:set-variable>
             </ee:variables>
         </ee:transform>
-		<flow-ref doc:name="orchestrators-get-boxes-by-orderId-main" doc:id="57322f4b-6535-43e9-b178-a7f1fe461043" name="orchestrators-get-boxes-by-orderId-main"/>
-    </flow>
-    <flow name="post:\wms\article:application\xml:system-wms-by-api-config">
-        <ee:transform>
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
-    </flow>
-    <flow name="post:\wms\availability:application\json:system-wms-by-api-config">
-        <ee:transform>
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
-    </flow>
-    <flow name="post:\wms\bill_lading_details:application\json:system-wms-by-api-config">
-        <ee:transform>
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
-    </flow>
-    <flow name="post:\wms\box_quantity:application\json:system-wms-by-api-config">
-        <ee:transform>
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
-    </flow>
-    <flow name="post:\wms\logistics_footprint:application\json:system-wms-by-api-config">
-        <ee:transform>
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
-    </flow>
-    <flow name="post:\wms\order:application\xml:system-wms-by-api-config">
-        <ee:transform>
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
-    </flow>
-    <flow name="post:\wms\volumetry:application\json:system-wms-by-api-config">
-        <ee:transform>
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+        <flow-ref doc:name="orchestrators-get-boxes-by-orderId-main" doc:id="57322f4b-6535-43e9-b178-a7f1fe461043" name="orchestrators-get-boxes-by-orderId-main" />
     </flow>
 </mule>
