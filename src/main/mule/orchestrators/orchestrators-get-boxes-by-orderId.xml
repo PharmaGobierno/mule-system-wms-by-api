@@ -11,7 +11,13 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-payload[0]]]></ee:set-payload>
+{
+  "CAJAS_CONSOLIDADAS": payload[0].CAJAS_CONSOLIDADAS default "",
+  "CAJAS_CARGADAS": payload[0].CAJAS_CARGADAS default "",
+  "CARGA": payload[0].CARGA default "",
+  "CAJAS_NO_CONSOLIDADAS": payload[0].CAJAS_NO_CONSOLIDADAS default ""
+}
+]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</sub-flow>
