@@ -20,11 +20,11 @@ output application/json
 []]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<ee:transform doc:name="Set Query" doc:id="939217c8-13bb-494b-b028-dd5993a95f9b" >
-			<ee:message >
-			</ee:message>
-			<ee:variables >
-				<ee:set-variable variableName="queryAvailability" ><![CDATA[%dw 2.0
+<ee:transform doc:name="Set Query" doc:id="9fe9ae85-71bd-457f-a6db-2e5db808df54" >
+            <ee:message >
+            </ee:message>
+            <ee:variables >
+                <ee:set-variable variableName="queryAvailability" ><![CDATA[%dw 2.0
 output application/json
 ---
 "SELECT inv.prtnum sku,
@@ -84,8 +84,8 @@ AND locmst.stoloc not in ('EVA-250', 'VOALM.01.00','VOALT.01.00','VOCOG.01.00','
 GROUP BY inv.prtnum,    
         inv.untpak,
         inv.untcas"]]></ee:set-variable>
-			</ee:variables>
-		</ee:transform>
+            </ee:variables>
+        </ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-availability" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-availability" />
 		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
 <!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" /> [STUDIO] -->
