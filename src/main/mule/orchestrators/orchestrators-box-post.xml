@@ -23,7 +23,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    lpn_pending_pick: vars.responseLPN[0].SINSURTIR,&#10;    lpn_pending_picked: vars.responseLPN[0].SURTIDOS,&#10;    lpn_assortments_pallet: vars.responseLPN[0].SurtidosEnPalet,&#10;    delivery_pending_pick: vars.surtidosResponse[0].SinSurtir,&#10;    delivery_pending_picked: vars.surtidosResponse[0].Surtidos,&#10;    delivery_assortments_pallet: vars.surtidosResponse[0].SurtidosEnPalet&#10;}]' doc:name="Set Response" doc:id="064447c1-160a-4ce8-92b6-bf02083c3802" />
 			</when>
 			<otherwise >
-				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    lpn_pending_pick: vars.responseLPN[0].SINSURTIR,&#10;    lpn_pending_picked: vars.responseLPN[0].SURTIDOS,&#10;    lpn_assortments_pallet: vars.responseLPN[0].SURTIDOSENPALET,&#10;    delivery_pending_pick: "",&#10;    delivery_pending_picked: "",&#10;    delivery_assortments_pallet: ""&#10;}]' doc:name="Set Response" doc:id="71a37cef-03b6-446c-8193-e3fdfebb428a" />
+				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    lpn_pending_pick: vars.responseLPN[0].SINSURTIR,&#10;    lpn_pending_picked: vars.responseLPN[0].SURTIDOS,&#10;    lpn_assortments_pallet: vars.responseLPN[0].SurtidosEnPalet,&#10;    delivery_pending_pick: "",&#10;    delivery_pending_picked: "",&#10;    delivery_assortments_pallet: ""&#10;}]' doc:name="Set Response" doc:id="71a37cef-03b6-446c-8193-e3fdfebb428a" />
 			</otherwise>
 		</choice>
 	</sub-flow>
