@@ -168,41 +168,7 @@ group by ord.ordnum,
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-box-quantity" doc:id="0c31bbcd-70e6-4f4a-8546-188b92a19c4a" >
 		<db:select doc:name="Select" doc:id="99247b82-ec6d-40d6-9f8d-c8134d005366" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[select (select sum(case when (invd_h1.subnum like 'SHP%' or invd_h1.subnum like 'CTN%') then 1
-                         else ceil(sum(invd_h1.untqty) / (select distinct dtl_cas.untcas
-                                                            from TRXWMSPRD.invdtl_hist dtl_cas
-                                                           where dtl_cas.subnum = invd_h1.subnum))
-                    end)
-           from TRXWMSPRD.shipment_line shplin
-           join TRXWMSPRD.invdtl_hist invd_h1
-             on invd_h1.ship_line_id = shplin.ship_line_id
-           join TRXWMSPRD.invsub_hist invs_h1
-             on invs_h1.subnum = invd_h1.subnum
-          where shplin.ship_id = shipment_line.ship_id
-            and invs_h1.lodnum = invsub_hist.lodnum
-            and shplin.wh_id = invlod_hist.wh_id
-          group by invd_h1.subnum) as bultos_por_orden,
-        shipment_line.ship_id,
-        ord.ordnum
-   from TRXWMSPRD.shipment_line
-   join TRXWMSPRD.ord
-     on ord.client_id = shipment_line.client_id
-    and ord.ordnum = shipment_line.ordnum
-    and ord.wh_id = shipment_line.wh_id
-   join TRXWMSPRD.invdtl_hist
-     on invdtl_hist.ship_line_id = shipment_line.ship_line_id
-   join TRXWMSPRD.invsub_hist
-     on invsub_hist.subnum = invdtl_hist.subnum
-   join TRXWMSPRD.invlod_hist
-     on invlod_hist.lodnum = invsub_hist.lodnum
-  where shipment_line.ship_id in ('SID0002322')
-    and shipment_line.wh_id = 'AVIOR-27'
-  group by shipment_line.ship_id,
-        invsub_hist.lodnum,
-        ord.ordnum,
-        invdtl_hist.subnum,
-        invlod_hist.wh_id
-]]></db:sql>
+			<db:sql ><![CDATA[#[vars.queryBoxQuantity]]]></db:sql>
 			<db:input-parameters ><![CDATA[#[shipment:payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
@@ -238,7 +204,7 @@ on iv.wh_id = lm.wh_id
 where pv1.ordnum = :ordnum
         and pv1.wrktyp = 'K'
         and pv1.appqty = 1
-        and lm.mov_zone_id = '10036') inPal,
+        and lm.mov_zone_id in ('10093', '10036')) inPal,
 (select count(distinct pv2.ctnnum) as "Surtidos"
 from TRXWMSPRD.pckwrk_view pv1
 join TRXWMSPRD.pckwrk_view pv2
@@ -261,7 +227,7 @@ on iv.wh_id = lm.wh_id
 where pv1.ordnum = :ordnum
         and pv1.wrktyp = 'K'
         and pv1.appqty = 1
-        and lm.mov_zone_id != '10036') inPal2,
+        and lm.mov_zone_id not in ('10093', '10036')) inPal2,
 (select count(*) "SinSurtir"
    from TRXWMSPRD.pckwrk_view
   where ordnum = :ordnum
@@ -294,7 +260,8 @@ where pv1.ordnum = :ordnum
     and iv.stoloc = lm.stoloc
   where IV.lodnum = :lodnum
     and pv1.wrktyp = 'K'
-    and pv1.appqty = 1) a,
+    and pv1.appqty = 1
+    and lm.mov_zone_id in ('10093','10036')) a,
 (select count(*) SinSurtir
    from TRXWMSPRD.pckwrk_view pv
    join TRXWMSPRD.inventory_pckwrk_view ipv
@@ -308,10 +275,12 @@ where pv1.ordnum = :ordnum
    join TRXWMSPRD.locmst
      on ipv2.stoloc = locmst.stoloc
     and ipv2.wh_id = locmst.wh_id
-    and locmst.mov_zone_id != '10036'
-    /*and ipv.lodnum != ipv2.lodnum*/
-  where ipv2.wrktyp = 'P'
-    and ipv2.lodnum = :lodnum) c]]></db:sql>
+    and locmst.mov_zone_id not in ('10093', '10036')
+        /*and ipv.lodnum != ipv2.lodnum*/
+  where ipv2.ordnum in (select distinct ordnum
+                          from TRXWMSPRD.inventory_pckwrk_view ipv3
+                         where lodnum = :lodnum)
+    and ipv2.subnum like 'CTN%') c]]></db:sql>
 			<db:input-parameters ><![CDATA[#[lodnum: payload]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>

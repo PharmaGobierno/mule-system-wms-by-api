@@ -31,13 +31,46 @@ output application/json
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-payload.shipment]]></ee:set-payload>
+("'" ++((payload.shipments) joinBy "," ) replace "," with("','") ++ "'")]]></ee:set-payload>
 			</ee:message>
 			<ee:variables >
 				<ee:set-variable variableName="arrayAux" ><![CDATA[%dw 2.0
 output application/json
 ---
 []]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Set Query" doc:id="69db9844-b100-4dfa-bc38-071b75919f7b">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="queryBoxQuantity" ><![CDATA[%dw 2.0
+output application/json
+---
+"select ship_id,ordnum,sum(bultos_por_orden)
+from
+(select sum(case when (invdtl_hist.subnum like 'SHP%' or invdtl_hist.subnum like 'CTN%') then 1
+             else invdtl_hist.untqty / invdtl_hist.untcas
+        end) as bultos_por_orden,
+        shipment_line.ship_id,
+        ord.ordnum
+   from TRXWMSPRD.shipment_line
+   join TRXWMSPRD.ord
+     on ord.client_id = shipment_line.client_id
+    and ord.ordnum = shipment_line.ordnum
+    and ord.wh_id = shipment_line.wh_id
+   join TRXWMSPRD.invdtl_hist
+     on invdtl_hist.ship_line_id = shipment_line.ship_line_id
+   join TRXWMSPRD.invsub_hist
+     on invsub_hist.subnum = invdtl_hist.subnum
+   join TRXWMSPRD.invlod_hist
+     on invlod_hist.lodnum = invsub_hist.lodnum
+  where shipment_line.ship_id in (" ++ payload ++ ")
+    and shipment_line.wh_id = 'AVIOR-27'
+  group by shipment_line.ship_id,
+        ord.ordnum,
+        invdtl_hist.subnum)
+group by ship_id,ordnum "
+]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-box-quantity" doc:id="05a24bf2-b1ce-4b54-8299-777bfdc73840" name="client-db-wms-get-box-quantity" />
