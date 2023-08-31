@@ -161,15 +161,24 @@ output application/json
         <flow-ref doc:name="Call to orchestrators-box-quantity" doc:id="54fcd5b6-1449-45e5-8e93-cc0feecda1ba" name="orchestrators-box-quantity" />
     </flow>
     <flow name="post:\wms\box:application\json:system-wms-by-api-config">
-        <flow-ref doc:name="orchestrators-box-main" doc:id="7ef8aef2-61fa-4c95-89cc-a07554ef2ce4" name="orchestrators-box-main" />
+        <flow-ref doc:name="Call to orchestrators-box-postSub_Flow" doc:id="7ef8aef2-61fa-4c95-89cc-a07554ef2ce4" name="orchestrators-box-postSub_Flow" />
     </flow>
     <flow name="get:\wms\download_sequence:system-wms-by-api-config">
         <flow-ref doc:name="Call to orchestrators-shipment-status" doc:id="6f6b82d4-cf73-4596-95c1-577e036ecde9" name="orchestrators-shipment-status" />
     </flow>
     <flow name="get:\wms\order\(lodnum)\box:system-wms-by-api-config">
         <ee:transform>
-            <ee:variables>
-                <ee:set-variable variableName="lodnum">attributes.uriParams.'lodnum'</ee:set-variable>
+            <ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	lodnum: attributes.uriParams.'lodnum',
+	wh_id: "AVIOR-27"
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+                <ee:set-variable variableName="lodnum"><![CDATA[attributes.uriParams.'lodnum']]></ee:set-variable>
             </ee:variables>
         </ee:transform>
         <flow-ref doc:name="orchestrators-get-boxes-by-orderId-main" doc:id="57322f4b-6535-43e9-b178-a7f1fe461043" name="orchestrators-get-boxes-by-orderId-main" />

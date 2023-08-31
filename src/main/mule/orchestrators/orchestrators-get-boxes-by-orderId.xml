@@ -15,9 +15,12 @@ output application/json
   "CAJAS_CONSOLIDADAS": payload[0].CAJAS_CONSOLIDADAS default "",
   "CAJAS_CARGADAS": payload[0].CAJAS_CARGADAS default "",
   "CARGA": payload[0].CARGA default "",
-  "CAJAS_NO_CONSOLIDADAS": payload[0].CAJAS_NO_CONSOLIDADAS default ""
-}
-]]></ee:set-payload>
+  "CAJAS_NO_CONSOLIDADAS": payload[0].CAJAS_NO_CONSOLIDADAS default "",
+  "SOP_VIDA": payload[0].SOP_VIDA,
+  "CONTROLADO": payload[0].CONTROLADO,
+  "URGENTE": payload[0].URGENTE,
+  "CAJAS_EN_LPN": payload[0].CAJAS_EN_LPN,
+}]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</sub-flow>

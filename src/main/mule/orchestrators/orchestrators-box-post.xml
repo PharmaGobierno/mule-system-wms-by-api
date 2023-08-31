@@ -4,6 +4,26 @@
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrators-box-postSub_Flow" doc:id="c301c430-9da4-4d02-bacb-e332b697fc0f" >
+		<ee:transform doc:name="Set LPN" doc:id="1f82480a-b923-4ab4-bb07-c2a8dc69a03a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.code]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="client-db-wms-get-lpn-full" doc:id="8a5bfe53-7152-4e59-ab01-4e9e064412c1" name="client-db-wms-get-lpn-full" />
+		<ee:transform doc:name="Set Response" doc:id="31217aa4-0b5d-4000-998e-48776c7178af" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    lpn_pending_pick: payload[0].lpnSinSurtir,&#10;    lpn_pending_picked: payload[0].lpnSurtidos,&#10;    lpn_assortments_pallet: payload[0].lpnSurtidosEnPalet,&#10;    delivery_pending_pick: payload[0].delvSinSurtir,&#10;    delivery_pending_picked: payload[0].delvSurtidos,&#10;    delivery_assortments_pallet: payload[0].delvSurtidosEnPalet&#10;}]' doc:name="Set Response1" doc:id="101f21eb-8d6c-4a4c-a4d5-e820385c1529" />
+	</sub-flow>
 	<sub-flow name="orchestrators-box-main" doc:id="c74a952d-17fd-4f17-83ac-f3bad499ba41" >
 		<choice doc:name="Choice" doc:id="b830f076-8ca9-4b03-8059-7f1ac80c1f27" >
 			<when expression="#[payload.type_box == 'delivery']">
