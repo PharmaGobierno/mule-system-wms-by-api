@@ -288,7 +288,7 @@ where pv1.ordnum = :ordnum
 		<db:select doc:name="Select" doc:id="125e980b-8bda-40a3-bcf4-df2aefa7a174" config-ref="Database_Config_WMS_BlueYonder" >
 			<db:sql ><![CDATA[select *
 from
-(select distinct ordnum
+(select /*distinct ordnum*/ listagg (distinct ordnum,',') as ordnum
   from TRXWMSPRD.inventory_pckwrk_view ipv3
  where lodnum = :lodnum
    and ipv3.subnum like 'CTN%') delivery,
@@ -311,7 +311,7 @@ on pv2.wrkref = iv.wrkref
 JOIN TRXWMSPRD.locmst lm
 on iv.wh_id = lm.wh_id
         and iv.stoloc = lm.stoloc
-where pv1.ordnum = (select distinct ordnum
+where pv1.ordnum in (select distinct ordnum
                       from TRXWMSPRD.inventory_pckwrk_view ipv3
                      where lodnum = :lodnum
                        and ipv3.subnum like 'CTN%')
@@ -337,7 +337,7 @@ on pv2.wrkref = iv.wrkref
 JOIN TRXWMSPRD.locmst lm
 on iv.wh_id = lm.wh_id
         and iv.stoloc = lm.stoloc
-where pv1.ordnum = (select distinct ordnum
+where pv1.ordnum in (select distinct ordnum
                       from TRXWMSPRD.inventory_pckwrk_view ipv3
                      where lodnum = :lodnum
                        and ipv3.subnum like 'CTN%')
@@ -346,7 +346,7 @@ where pv1.ordnum = (select distinct ordnum
         and lm.mov_zone_id not in ('10093', '10036')) inPal2,
 (select count(*) "delvSinSurtir"
    from TRXWMSPRD.pckwrk_view
-  where ordnum = (select distinct ordnum
+  where ordnum in (select distinct ordnum
                     from TRXWMSPRD.inventory_pckwrk_view ipv3
                    where lodnum = :lodnum
                      and ipv3.subnum like 'CTN%')
