@@ -13,7 +13,7 @@ output application/json
 ---
 {
     "order_number": payload.ordnum[0],
-    "skus": payload.load_attr5_cfg map
+    "skus": payload map
         {
             "sku": $.prtnum,
             "quantity": $.comqty
