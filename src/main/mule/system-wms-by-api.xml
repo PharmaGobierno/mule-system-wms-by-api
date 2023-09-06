@@ -3,7 +3,7 @@
     <http:listener-config name="system-wms-by-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS" tlsContext="TLS_Context" />
     </http:listener-config>
-    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.13:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.14:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="system-wms-by-api-main">
         <http:listener config-ref="system-wms-by-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -168,19 +168,93 @@ output application/json
     </flow>
     <flow name="get:\wms\order\(lodnum)\box:system-wms-by-api-config">
         <ee:transform>
-            <ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
 	lodnum: attributes.uriParams.'lodnum',
 	wh_id: "AVIOR-27"
 }]]></ee:set-payload>
-			</ee:message>
-			<ee:variables>
+            </ee:message>
+            <ee:variables>
                 <ee:set-variable variableName="lodnum"><![CDATA[attributes.uriParams.'lodnum']]></ee:set-variable>
             </ee:variables>
         </ee:transform>
         <flow-ref doc:name="orchestrators-get-boxes-by-orderId-main" doc:id="57322f4b-6535-43e9-b178-a7f1fe461043" name="orchestrators-get-boxes-by-orderId-main" />
+    </flow>
+    <flow name="get:\wms\lines:system-wms-by-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="8e88ad53-da9a-4d1f-ba65-1a2d4ebfcfab" message='#["Obteniendo linea del order_number: " ++ attributes.queryParams.order_number]'/>
+		<flow-ref doc:name="orchestrator-get-lines-Flow" doc:id="8a766863-ae56-4819-b735-1ad1fbccbe7b" name="orchestrator-get-lines-Flow"/>
+    </flow>
+    <flow name="post:\wms\article:application\xml:system-wms-by-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\wms\availability:application\json:system-wms-by-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\wms\bill_lading_details:application\json:system-wms-by-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\wms\box_quantity:application\json:system-wms-by-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\wms\logistics_footprint:application\json:system-wms-by-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\wms\order:application\xml:system-wms-by-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\wms\volumetry:application\json:system-wms-by-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
     </flow>
 </mule>
