@@ -46,7 +46,7 @@ output application/json
 				<ee:set-variable variableName="queryBoxQuantity" ><![CDATA[%dw 2.0
 output application/json
 ---
-"select ship_id,ordnum,sum(bultos_por_orden)
+"select ship_id,ordnum,ceil(sum(bultos_por_orden))
 from
 (select sum(case when (invdtl_hist.subnum like 'SHP%' or invdtl_hist.subnum like 'CTN%') then 1
              else invdtl_hist.untqty / invdtl_hist.untcas
@@ -69,7 +69,7 @@ from
   group by shipment_line.ship_id,
         ord.ordnum,
         invdtl_hist.subnum)
-group by ship_id,ordnum "
+group by ship_id,ordnum"
 ]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
