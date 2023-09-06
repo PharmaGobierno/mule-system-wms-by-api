@@ -28,62 +28,132 @@ output application/json
 output application/json
 ---
 "SELECT inv.prtnum sku,
-        sum(inv.untqty) - nvl((select sum(pwv.pckqty - pwv.appqty)
-                                from trxwmsprd.pckwrk_view pwv
-                                where pwv.prtnum = inv.prtnum
-                                 and pwv.appqty < pwv.pckqty
-                                 and inv.untcas = pwv.untcas
-                                 and pwv.wrktyp = 'P'), 0) disp,
-        (CASE WHEN inv.untpak = 1 then 1 ELSE inv.untpak END) cantPzPck,
-        round(((sum(inv.untqty) - nvl((select sum(pwv.pckqty - pwv.appqty)
-                                  from trxwmsprd.pckwrk_view pwv
-                                 where pwv.prtnum = inv.prtnum
-                                   and pwv.appqty < pwv.pckqty
-                                   and inv.untcas = pwv.untcas
-                                   and pwv.wrktyp = 'P'), 0)) / (CASE WHEN inv.untpak = 1 then 1
-                                                                      ELSE inv.untpak
-                                                                 END))) packdisp,
-        nvl((select sum(pwv.pckqty - pwv.appqty)
-               from trxwmsprd.pckwrk_view pwv
-              where pwv.prtnum = inv.prtnum
-                and pwv.appqty < pwv.pckqty
-                and inv.untcas = pwv.untcas
-                and pwv.wrktyp = 'P'), 0) comp
+
+sum(inv.untqty) - nvl((select sum(pwv.pckqty - pwv.appqty)
+
+                        from trxwmsprd.pckwrk_view pwv
+
+                        where pwv.prtnum = inv.prtnum
+
+                         and pwv.appqty < pwv.pckqty
+
+                         and inv.untcas = pwv.untcas
+
+                         and pwv.wrktyp = 'P'
+
+                        and pwv.invsts = 'DISP'
+
+                        and pwv.srcare not in('CANBAJ','DEVOAG','DANADO','DEVORF')), 0) disp,
+
+-- (CASE WHEN inv.untpak > 1 then 'PQ' ELSE 'PZ'END) Paqueteo,
+
+(CASE WHEN inv.untpak = 1 then 1 ELSE inv.untpak END) cantPzPck,
+
+round(((sum(inv.untqty) - nvl((select sum(pwv.pckqty - pwv.appqty)
+
+                          from trxwmsprd.pckwrk_view pwv
+
+                         where pwv.prtnum = inv.prtnum
+
+                           and pwv.appqty < pwv.pckqty
+
+                           and inv.untcas = pwv.untcas
+
+                           and pwv.wrktyp = 'P'
+
+                           and pwv.invsts = 'DISP'
+
+                           and pwv.srcare not in('CANBAJ','DEVOAG','DANADO','DEVORF')), 0)) / (CASE WHEN inv.untpak = 1 then 1
+
+                                                              ELSE inv.untpak
+
+                                                         END))) packdisp,
+
+nvl((select sum(pwv.pckqty - pwv.appqty)
+
+       from trxwmsprd.pckwrk_view pwv
+
+      where pwv.prtnum = inv.prtnum
+
+        and pwv.appqty < pwv.pckqty
+
+        and inv.untcas = pwv.untcas
+
+        and pwv.wrktyp = 'P'
+
+        and pwv.invsts = 'DISP'
+
+        and pwv.srcare not in('CANBAJ','DEVOAG','DANADO','DEVORF')), 0) comp
+
 FROM (
-    SELECT
-             iv.wh_id,
-             iv.stoloc,
-             iv.lodnum,
-             iv.prtnum,
-             iv.ftpcod,
-             iv.invsts,
-             iv.untqty,
-             iv.untcas,
-             iv.untpak,
-             rcvlin.rcvkey,
-             rctk.trknum,  
-             iv.lotnum,
-             trl.trlr_id,
-            ( CASE WHEN trl.trlr_stat = NULL THEN 'D' ELSE trl.trlr_stat END) dispatch
+
+SELECT
+
+     iv.wh_id,
+
+     iv.stoloc,
+
+     iv.lodnum,
+
+     iv.prtnum,
+
+     iv.ftpcod,
+
+     iv.invsts,
+
+     iv.untqty,
+
+     iv.untcas,
+
+     iv.untpak,
+
+     rcvlin.rcvkey,
+
+     rctk.trknum,  
+
+     iv.lotnum,
+
+     trl.trlr_id,
+
+    ( CASE WHEN trl.trlr_stat = NULL THEN 'D' ELSE trl.trlr_stat END) dispatch
+
 FROM
-    trxwmsprd.inventory_view iv
-    LEFT JOIN trxwmsprd.rcvlin         rcvlin ON iv.rcvkey = rcvlin.rcvkey
-    LEFT JOIN trxwmsprd.rcvtrk         rctk ON rcvlin.trknum = rctk.trknum
-    LEFT JOIN trxwmsprd.trlr           trl ON rctk.trlr_id = trl.trlr_id
+
+trxwmsprd.inventory_view iv
+
+LEFT JOIN trxwmsprd.rcvlin         rcvlin ON iv.rcvkey = rcvlin.rcvkey
+
+LEFT JOIN trxwmsprd.rcvtrk         rctk ON rcvlin.trknum = rctk.trknum
+
+LEFT JOIN trxwmsprd.trlr           trl ON rctk.trlr_id = trl.trlr_id
+
 WHERE 1 = 1
-    AND iv.prtnum IN ( "++ payload ++" )
-    AND iv.invsts = ( 'DISP' )
-    AND ( trl.trlr_stat = 'D'
-          OR trl.trlr_stat IS NULL )
-     AND iv.ship_line_id is null ) inv
-     JOIN TRXWMSPRD.locmst ON inv.stoloc = locmst.stoloc
+
+AND iv.prtnum IN ( " ++ payload ++ " )
+
+AND iv.invsts = ( 'DISP' )
+
+AND ( trl.trlr_stat = 'D'
+
+  OR trl.trlr_stat IS NULL )
+
+AND iv.ship_line_id is null ) inv
+
+JOIN TRXWMSPRD.locmst ON inv.stoloc = locmst.stoloc
+
 WHERE 1=1
+
 AND locmst.ARECOD not in('CANBAJ','DEVOAG','DANADO','DEVORF')
+
 AND inv.wh_id = 'AVIOR-27'
+
 AND locmst.stoloc not in ('EVA-250', 'VOALM.01.00','VOALT.01.00','VOCOG.01.00','VOCON.01.00','VOREF.01.00')
+
 GROUP BY inv.prtnum,    
-        inv.untpak,
-        inv.untcas"]]></ee:set-variable>
+
+inv.untpak,
+
+inv.untcas"]]></ee:set-variable>
             </ee:variables>
         </ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-availability" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-availability" />
