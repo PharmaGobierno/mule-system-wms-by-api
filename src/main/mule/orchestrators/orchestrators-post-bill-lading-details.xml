@@ -46,30 +46,33 @@ output application/json
 				<ee:set-variable variableName="queryBoxQuantity" ><![CDATA[%dw 2.0
 output application/json
 ---
-"select ship_id,ordnum,ceil(sum(bultos_por_orden))
-from
-(select sum(case when (invdtl_hist.subnum like 'SHP%' or invdtl_hist.subnum like 'CTN%') then 1
-             else invdtl_hist.untqty / invdtl_hist.untcas
-        end) as bultos_por_orden,
-        shipment_line.ship_id,
-        ord.ordnum
-   from TRXWMSPRD.shipment_line
-   join TRXWMSPRD.ord
-     on ord.client_id = shipment_line.client_id
-    and ord.ordnum = shipment_line.ordnum
-    and ord.wh_id = shipment_line.wh_id
-   join TRXWMSPRD.invdtl_hist
-     on invdtl_hist.ship_line_id = shipment_line.ship_line_id
-   join TRXWMSPRD.invsub_hist
-     on invsub_hist.subnum = invdtl_hist.subnum
-   join TRXWMSPRD.invlod_hist
-     on invlod_hist.lodnum = invsub_hist.lodnum
-  where shipment_line.ship_id in (" ++ payload ++ ")
-    and shipment_line.wh_id = 'AVIOR-27'
-  group by shipment_line.ship_id,
-        ord.ordnum,
-        invdtl_hist.subnum)
-group by ship_id,ordnum"
+"select ship_id,
+        ordnum,
+        ceil(sum(bultos_por_orden))
+   from (select sum(distinct
+                    case when (invdtl_hist.subnum like 'SHP%' or invdtl_hist.subnum like 'CTN%') then 1
+                         else invdtl_hist.untqty / invdtl_hist.untcas
+                    end) as bultos_por_orden,
+                shipment_line.ship_id,
+                ord.ordnum
+           from TRXWMSPRD.shipment_line
+           join TRXWMSPRD.ord
+             on ord.client_id = shipment_line.client_id
+            and ord.ordnum = shipment_line.ordnum
+            and ord.wh_id = shipment_line.wh_id
+           join TRXWMSPRD.invdtl_hist
+             on invdtl_hist.ship_line_id = shipment_line.ship_line_id
+           join TRXWMSPRD.invsub_hist
+             on invsub_hist.subnum = invdtl_hist.subnum
+           join TRXWMSPRD.invlod_hist
+             on invlod_hist.lodnum = invsub_hist.lodnum
+          where shipment_line.ship_id in (" ++ payload ++ ")
+            and shipment_line.wh_id = 'AVIOR-27'
+          group by shipment_line.ship_id,
+                ord.ordnum,
+                invdtl_hist.subnum)
+  group by ship_id,
+        ordnum"
 ]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
