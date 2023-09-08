@@ -50,7 +50,11 @@ output application/json
         ordnum,
         ceil(sum(bultos_por_orden))
    from (select sum(distinct
-                    case when (invdtl_hist.subnum like 'SHP%' or invdtl_hist.subnum like 'CTN%') then 1
+                    case when(invdtl_hist.subnum like 'SHP%' or invdtl_hist.subnum like 'CTN%') then(select count(distinct hist_1.subnum)
+                                                                                   from invdtl_hist hist_1
+                                                                                   join shipment_line shp_ln1
+                                                                                     on shp_ln1.ship_line_id = hist_1.ship_line_id
+                                                                                  where shp_ln1.ship_id = shipment_line.ship_id)
                          else invdtl_hist.untqty / invdtl_hist.untcas
                     end) as bultos_por_orden,
                 shipment_line.ship_id,
@@ -60,6 +64,7 @@ output application/json
              on ord.client_id = shipment_line.client_id
             and ord.ordnum = shipment_line.ordnum
             and ord.wh_id = shipment_line.wh_id
+           left
            join TRXWMSPRD.invdtl_hist
              on invdtl_hist.ship_line_id = shipment_line.ship_line_id
            join TRXWMSPRD.invsub_hist
@@ -69,8 +74,7 @@ output application/json
           where shipment_line.ship_id in (" ++ payload ++ ")
             and shipment_line.wh_id = 'AVIOR-27'
           group by shipment_line.ship_id,
-                ord.ordnum,
-                invdtl_hist.subnum)
+                ord.ordnum)
   group by ship_id,
         ordnum"
 ]]></ee:set-variable>
