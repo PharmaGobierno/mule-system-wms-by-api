@@ -22,6 +22,7 @@ output application/json
 		</ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-download-sequence" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-download-sequence" />
 		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
-<!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" /> [STUDIO] -->
+<logger level="INFO" doc:name="Logger" doc:id="eb7cf762-c93f-47e6-854f-8c70ec5ee347" message="#[payload]"/>
+		<!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" /> [STUDIO] -->
 	</sub-flow>
 </mule>
