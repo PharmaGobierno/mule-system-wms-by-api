@@ -1031,4 +1031,41 @@ from dual]]></db:sql>
 }]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
+	<sub-flow name="client-db-wms-get-splits" doc:id="b14e2919-7371-4336-90d8-fd8b5c30c190" >
+				<db:select doc:name="Select" doc:id="b224d6c1-bc0a-4f1e-b4e3-06d2151f4e34" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[select
+    case
+        when count(distinct shipment.shpsts) > 1 then 1
+        else 0
+    end split
+from TRXWMSPRD.ord
+    join TRXWMSPRD.shipment_line on shipment_line.ordnum = ord.ordnum
+    join TRXWMSPRD.shipment on shipment.ship_id = shipment_line.ship_id and shipment.shpsts != 'B'
+where ord.ordnum = :orderNumber
+order by split desc]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	orderNumber: attributes.queryParams.order_number
+}]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="client-db-wms-get-split-validation" doc:id="644dccb6-4c41-4191-a934-66e0f640d475" >
+				<db:select doc:name="Select" doc:id="a9487ef7-289f-42d7-ac32-ad3e4efe0e1c" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[select
+    case
+        when count(
+            distinct shipment_line.ship_id
+        ) > 1 then 1
+        else 0
+    end split
+from TRXWMSPRD.ord
+    join TRXWMSPRD.shipment_line on shipment_line.ordnum = ord.ordnum
+    join TRXWMSPRD.shipment on shipment.ship_id = shipment_line.ship_id and shipment.shpsts != 'B'
+where
+    ord.ordnum = :orderNumber
+group by ord.ordnum]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	orderNumber: attributes.queryParams.order_number
+}]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
 </mule>
