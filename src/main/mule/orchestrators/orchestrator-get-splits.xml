@@ -5,13 +5,57 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="orchestrator-get-split-Flow" doc:id="36b6f38e-9839-4516-82eb-9590e3b9dc52" >
-		<flow-ref doc:name="Call to client-db-wms-get-splits" doc:id="6a5597a1-594e-4c45-9c89-60d1a22dfce9" name="client-db-wms-get-splits"/>
-		<ee:transform doc:name="Transform Message" doc:id="6948d4d7-c243-4115-aafe-2702fdd6a921" >
+		<ee:transform doc:name="get Orders" doc:id="dcf17c6c-6e73-4c0f-9eaf-0eaabf5bc401">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+("'" ++((payload.orders) joinBy "," ) replace "," with("','") ++ "'")]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="arrayAux"><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+				<ee:set-variable variableName="splitsArray" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Set Query" doc:id="a250d954-dacd-4fd7-9dda-f3884384b296">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="querySplitNumber"><![CDATA[%dw 2.0
+output application/json
+---
+"  WITH Enviados AS (
+    SELECT DISTINCT sl.ORDNUM ,COUNT(DISTINCT sl.SHIP_ID) AS ENVIOS
+    FROM TRXWMSPRD.shipmenT_LINE sl
+    WHERE sl.ORDNUM in (" ++ payload ++ ")
+    GROUP BY ORDNUM
+),
+Despachados AS (
+    SELECT COUNT(cm.car_move_id) AS DESPACHADOS
+    FROM trxwmsprd.car_move cm
+    JOIN trxwmsprd.stop st ON cm.car_move_id = st.car_move_id
+    JOIN trxwmsprd.shipment shp ON st.stop_id = shp.stop_id
+    JOIN TRXWMSPRD.shipmenT_LINE shpl ON shp.ship_id = shpl.ship_id
+    WHERE cm.wh_sts = 'WHCOMPLETE'
+    AND shpl.ORDNUM in (" ++ payload ++ ")
+)
+SELECT  Enviados.ORDNUM, Enviados.ENVIOS, Despachados.DESPACHADOS
+FROM Enviados, Despachados"
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Call to client-db-wms-get-splits" doc:id="6a5597a1-594e-4c45-9c89-60d1a22dfce9" name="client-db-wms-get-splits" />
+		<ee:transform doc:name="Transform Message" doc:id="9c21a8e9-7d78-418a-a620-33e1e343fffa" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-if(payload.SPLIT[0] == 0) false else true]]></ee:set-payload>
+payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</sub-flow>

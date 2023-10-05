@@ -5,13 +5,48 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="orchestrator-get-split-validation-Flow" doc:id="36b6f38e-9839-4516-82eb-9590e3b9dc52" >
+		<ee:transform doc:name="get Orders" doc:id="b8560dc7-47ad-4207-b76a-2bd59ae67606">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+("'" ++((payload.orders) joinBy "," ) replace "," with("','") ++ "'")]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="arrayAux"><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Set Query" doc:id="b2c4fff1-4a64-48ae-b9a1-0bab0e45ced3">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="querySplitValidation" ><![CDATA[%dw 2.0
+output application/json
+---
+"select
+distinct ord.ordnum,
+    case
+        when count(distinct shipment.ship_id) > 1 then 1
+        else 0
+    end split
+from TRXWMSPRD.ord
+    join TRXWMSPRD.shipment_line on shipment_line.ordnum = ord.ordnum
+    join TRXWMSPRD.shipment on shipment.ship_id = shipment_line.ship_id 
+    and shipment.shpsts != 'B'
+where ord.ordnum in (" ++ payload ++ ")
+group by ord.ordnum"
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-split-validation" doc:id="6a5597a1-594e-4c45-9c89-60d1a22dfce9" name="client-db-wms-get-split-validation"/>
 		<ee:transform doc:name="Transform Message" doc:id="6948d4d7-c243-4115-aafe-2702fdd6a921" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-payload.SPLIT[0]]]></ee:set-payload>
+payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</sub-flow>
