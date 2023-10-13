@@ -1047,4 +1047,21 @@ from dual]]></db:sql>
 }]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
+	<sub-flow name="client-db-wms-get-provider" doc:id="ed5c4c64-b602-4f70-bfe6-45211c986c12" >
+				<db:select doc:name="Select" doc:id="c0394dcf-0d07-4e48-9531-70184074d012" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[SELECT
+    supm.supnum,
+    adrm.ADRNAM
+FROM
+    trxwmsprd.supmst supm,
+    trxwmsprd.adrmst adrm
+WHERE
+    adrm.adr_id = supm.adr_id
+    AND adrtyp = 'SUP' 
+    and supm.supnum = : provider_id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	provider_id: vars.provider_id
+}]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
 </mule>

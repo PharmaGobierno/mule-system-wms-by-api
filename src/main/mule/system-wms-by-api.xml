@@ -3,7 +3,7 @@
     <http:listener-config name="system-wms-by-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS" tlsContext="TLS_Context" />
     </http:listener-config>
-    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.18:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.19:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="system-wms-by-api-main">
         <http:listener config-ref="system-wms-by-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -188,11 +188,19 @@ output application/json
         <flow-ref doc:name="orchestrator-get-lines-Flow" doc:id="8a766863-ae56-4819-b735-1ad1fbccbe7b" name="orchestrator-get-lines-Flow" />
     </flow>
     <flow name="post:\wms\order\split:application\json:system-wms-by-api-config">
-<!-- [STUDIO:"Logger"]		<logger level="INFO" doc:name="Logger" doc:id="098db6e5-cc90-4f01-a0de-e4c04bb08850" message='#["Obteniendo numero de splits del order_number: " + payload.orders as String]' /> [STUDIO] -->
-		<flow-ref doc:name="Call to orchestrator-get-split-Flow" doc:id="b66dfc9e-8191-4bf7-afc6-17df13eb6c74" name="orchestrator-get-split-Flow"/>
+        <!-- [STUDIO:"Logger"]		<logger level="INFO" doc:name="Logger" doc:id="098db6e5-cc90-4f01-a0de-e4c04bb08850" message='#["Obteniendo numero de splits del order_number: " + payload.orders as String]' /> [STUDIO] -->
+        <flow-ref doc:name="Call to orchestrator-get-split-Flow" doc:id="b66dfc9e-8191-4bf7-afc6-17df13eb6c74" name="orchestrator-get-split-Flow" />
     </flow>
     <flow name="post:\wms\order\split\validation:application\json:system-wms-by-api-config">
-<!-- [STUDIO:"Logger"]		<logger level="INFO" doc:name="Logger" doc:id="43b76816-ceb6-4617-9f00-7fd2ad9a559a" message='#["Obteniendo validacion de split del order_number: " + payload.orders as String]' /> [STUDIO] -->
-		<flow-ref doc:name="Call to orchestrator-get-split-validation-Flow" doc:id="5ae1f885-543f-4aaa-96a2-1fd8ea17e2df" name="orchestrator-get-split-validation-Flow"/>
+        <!-- [STUDIO:"Logger"]		<logger level="INFO" doc:name="Logger" doc:id="43b76816-ceb6-4617-9f00-7fd2ad9a559a" message='#["Obteniendo validacion de split del order_number: " + payload.orders as String]' /> [STUDIO] -->
+        <flow-ref doc:name="Call to orchestrator-get-split-validation-Flow" doc:id="5ae1f885-543f-4aaa-96a2-1fd8ea17e2df" name="orchestrator-get-split-validation-Flow" />
+    </flow>
+    <flow name="get:\wms\provider\(provider_id):system-wms-by-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:variables>
+                <ee:set-variable variableName="provider_id">attributes.uriParams.'provider_id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+		<flow-ref doc:name="orchestrator-get-provider" doc:id="340cb540-4eff-488d-8012-cde1f0d0f983" name="orchestrator-get-provider"/>
     </flow>
 </mule>
