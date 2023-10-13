@@ -1058,7 +1058,7 @@ FROM
 WHERE
     adrm.adr_id = supm.adr_id
     AND adrtyp = 'SUP' 
-    and supm.supnum = : provider_id]]></db:sql>
+    and supm.supnum = :provider_id]]></db:sql>
 			<db:input-parameters ><![CDATA[#[{
 	provider_id: vars.provider_id
 }]]]></db:input-parameters>
