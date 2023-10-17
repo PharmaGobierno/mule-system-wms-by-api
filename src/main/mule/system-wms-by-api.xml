@@ -219,17 +219,4 @@ output application/json
         </ee:transform>
 		<flow-ref doc:name="orchestrator-get-provider" doc:id="6f79b76e-80b1-4d9c-9752-5441d71798c8" name="orchestrator-get-providersarray"/>
     </flow>
-    <flow name="post:\wms\article:application\xml:system-wms-by-api-config">
-        <ee:transform doc:name="Transform Message">
-            <ee:message>
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-{}]]></ee:set-payload>
-            </ee:message>
-			<ee:variables >
-			</ee:variables>
-        </ee:transform>
-		<flow-ref doc:name="Flow Reference" doc:id="9e28ed6b-4155-4c4f-a6f2-21c90843f24d" name="orchestrator-get-providersarray"/>
-    </flow>
 </mule>
