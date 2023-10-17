@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrator-get-providersarray" doc:id="ffcb17e8-5af7-46d9-9317-b517f6446b1d" >
+		<ee:transform doc:name="Transform Message" doc:id="982dc974-808b-4fc3-a6c7-6b0adb587565">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="query"><![CDATA[%dw 2.0
+output application/json
+---
+"SELECT
+    supm.supnum,
+    adrm.ADRNAM
+FROM
+    trxwmsprd.supmst supm,
+    trxwmsprd.adrmst adrm
+WHERE
+    adrm.adr_id = supm.adr_id
+    AND adrtyp = 'SUP' 
+    AND supm.supnum IN ('" ++ (vars.providers_id default "") ++ "')"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="f0d22440-fb97-4e86-b4a3-860f125ea2c6" message="#[vars.query]"/>
+		<flow-ref doc:name="client-db-wms-get-providers-array" doc:id="e0f21dea-2107-45dd-b8b6-1fc9b721ecff" name="client-db-wms-get-providers-array"/>
+		<ee:transform doc:name="Transform Message" doc:id="02f8111c-6218-46e5-9ed8-d7aa1fd1f3b6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>

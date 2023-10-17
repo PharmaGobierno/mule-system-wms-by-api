@@ -1064,4 +1064,12 @@ WHERE
 }]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
+	<sub-flow name="client-db-wms-get-providers-array" doc:id="be58bccb-9c34-405e-93b8-88f1ee1e7294" >
+		<db:select doc:name="Select" doc:id="0c929565-323e-4f7d-8107-93521f7a3605" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	providers_id: vars.providers_id
+	}]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
 </mule>

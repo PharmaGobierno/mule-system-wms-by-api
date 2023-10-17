@@ -3,7 +3,7 @@
     <http:listener-config name="system-wms-by-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS" tlsContext="TLS_Context" />
     </http:listener-config>
-    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.19:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.22:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="system-wms-by-api-main">
         <http:listener config-ref="system-wms-by-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -198,9 +198,38 @@ output application/json
     <flow name="get:\wms\provider\(provider_id):system-wms-by-api-config">
         <ee:transform doc:name="Transform Message">
             <ee:variables>
-                <ee:set-variable variableName="provider_id">attributes.uriParams.'provider_id'</ee:set-variable>
+                <ee:set-variable variableName="provider_id"><![CDATA[%dw 2.0
+output application/json
+---
+attributes.uriParams.'provider_id']]></ee:set-variable>
             </ee:variables>
         </ee:transform>
-		<flow-ref doc:name="orchestrator-get-provider" doc:id="340cb540-4eff-488d-8012-cde1f0d0f983" name="orchestrator-get-provider"/>
+        <flow-ref doc:name="orchestrator-get-provider" doc:id="340cb540-4eff-488d-8012-cde1f0d0f983" name="orchestrator-get-provider" />
+    </flow>
+    <flow name="get:\wms\provider:system-wms-by-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+            </ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="providers_id" ><![CDATA[%dw 2.0
+output application/json
+---
+(attributes.queryParams.providers_id default "") replace "," with ("','")]]></ee:set-variable>
+			</ee:variables>
+        </ee:transform>
+		<flow-ref doc:name="orchestrator-get-provider" doc:id="6f79b76e-80b1-4d9c-9752-5441d71798c8" name="orchestrator-get-providersarray"/>
+    </flow>
+    <flow name="post:\wms\article:application\xml:system-wms-by-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{}]]></ee:set-payload>
+            </ee:message>
+			<ee:variables >
+			</ee:variables>
+        </ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="9e28ed6b-4155-4c4f-a6f2-21c90843f24d" name="orchestrator-get-providersarray"/>
     </flow>
 </mule>
