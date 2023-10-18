@@ -36,7 +36,7 @@ output application/json
     GROUP BY ORDNUM
 ),
 Despachados AS (
-    SELECT COUNT(cm.car_move_id) AS DESPACHADOS
+    SELECT COUNT(DISTINCT cm.car_move_id) AS DESPACHADOS
     FROM trxwmsprd.car_move cm
     JOIN trxwmsprd.stop st ON cm.car_move_id = st.car_move_id
     JOIN trxwmsprd.shipment shp ON st.stop_id = shp.stop_id
