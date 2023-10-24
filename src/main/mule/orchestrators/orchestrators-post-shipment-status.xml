@@ -20,6 +20,28 @@ output application/json
 []]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
+		<ee:transform doc:name="set Query" doc:id="de677635-078b-494c-91b8-f75b615eccf8" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="shStatus" ><![CDATA[%dw 2.0
+output application/java
+var DBAQA = p('database.wms.blueyonder.schema')
+---
+"select
+	distinct DBAQA.sl_dwnld.*
+from
+	DBAQA.sl_ifd_data_dtl
+join DBAQA.sl_ifd_data_hdr
+     on
+	DBAQA.sl_ifd_data_hdr.ifd_data_seq = sl_ifd_data_dtl.ifd_data_seq
+join DBAQA.sl_dwnld
+     on
+	DBAQA.sl_dwnld.dwnld_seq = sl_ifd_data_hdr.dwnld_seq
+where
+	DBAQA.sl_dwnld.DWNLD_SEQ like :downloadSequence"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-download-sequence" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-download-sequence" />
 		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
 <logger level="INFO" doc:name="Logger" doc:id="eb7cf762-c93f-47e6-854f-8c70ec5ee347" message="#[payload]"/>

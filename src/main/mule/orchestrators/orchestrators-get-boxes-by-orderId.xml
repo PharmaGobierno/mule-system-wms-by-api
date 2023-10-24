@@ -5,6 +5,728 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="orchestrators-get-boxes-by-orderId-main" doc:id="b2450a64-9d0a-4b39-ad5a-ec0214b9470b" >
+		<ee:transform doc:name="Set Query" doc:id="a6445790-80d2-4ac8-8a7e-e8abe85ac969" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="cartonOrder" ><![CDATA[%dw 2.0
+output application/java
+var DBAQA = p('database.wms.blueyonder.schema')
+---
+"select
+	(
+	select
+		distinct cr.car_move_id /*Obtener order num por medio del lpn*/
+	from
+		DBAQA.all_inventory_view aiv
+	join DBAQA.shipment_line sl
+            on
+		aiv.ship_line_id = sl.ship_line_id
+	join DBAQA.shipment sh
+            on
+		sh.ship_id = sl.ship_id
+	join DBAQA.stop st
+            on
+		st.stop_id = sh.stop_id
+	join DBAQA.car_move cr
+            on
+		cr.car_move_id = st.car_move_id
+	where
+		lodnum = :lodnum
+		and rownum = 1) carga,
+	(
+	select
+		count(distinct all_inventory_view.subnum)/*obtener cajas fisicas en sitio 10038*/
+	from
+		DBAQA.car_move
+	join DBAQA.stop
+            on
+		stop.car_move_id = car_move.car_move_id
+	join DBAQA.shipment
+            on
+		shipment.stop_id = stop.stop_id
+	join DBAQA.shipment_line
+            on
+		shipment_line.ship_id = shipment.ship_id
+	left
+          join DBAQA.all_inventory_view
+            on
+		all_inventory_view.ship_line_id = shipment_line.ship_line_id
+		and all_inventory_view.wh_id = shipment_line.wh_id
+		and all_inventory_view.wh_id = shipment.wh_id
+	join DBAQA.prtmst
+            on
+		all_inventory_view.prtnum = prtmst.prtnum
+		and all_inventory_view.prt_client_id = prtmst.prt_client_id
+		and all_inventory_view.wh_id = prtmst.wh_id_tmpl
+	join DBAQA.prtfam
+            on
+		prtfam.prtfam = prtmst.prtfam
+	join DBAQA.prtfam_grp
+            on
+		prtfam_grp.prtfamgrp = prtfam.prtfamgrp
+	left
+          join DBAQA.prtdsc
+            on
+		prtdsc.colnam = /*#nobind*/
+		'prtnum|prt_client_id|wh_id_tmpl' /*#bind*/
+		and prtdsc.colval = prtmst.prtnum || '|' || prtmst.prt_client_id || '|' || prtmst.wh_id_tmpl
+		and prtdsc.locale_id = /*#nobind*/
+		'ES-ES' /*#bind*/
+	join DBAQA.dscmst prtfamgrp_dsc
+            on
+		prtfamgrp_dsc.colnam = /*#nobind*/
+		'prtfamgrp' /*#bind*/
+		and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
+		and prtfamgrp_dsc.locale_id = 'ES-ES'
+	join DBAQA.locmst
+            on
+		locmst.stoloc = all_inventory_view.stoloc
+		and locmst.mov_zone_id = '10038'
+	where
+		all_inventory_view.wh_id = :wh_id
+		and car_move.car_move_id = (
+		select
+			distinct cr.car_move_id
+		from
+			DBAQA.all_inventory_view aiv
+		join DBAQA.shipment_line sl
+                                           on
+			aiv.ship_line_id = sl.ship_line_id
+		join DBAQA.shipment sh
+                                           on
+			sh.ship_id = sl.ship_id
+		join DBAQA.stop st
+                                           on
+			st.stop_id = sh.stop_id
+		join DBAQA.car_move cr
+                                           on
+			cr.car_move_id = st.car_move_id
+		where
+			lodnum = :lodnum)
+		and (all_inventory_view.phyflg = 1)) +
+        
+       (
+	select
+		nvl(sum(sumas.suma),
+		0)/*obtener cajas no fisicas en sitio 10038*/
+	from
+		(
+		select
+			ceil((
+			select
+				sum(lod1.untqty / lod1.untcas)
+			from
+				DBAQA.all_inventory_view lod1
+			where
+				lod1.subnum = all_inventory_view.subnum)) as suma,
+			prtfam.prtfamgrp
+		from
+			DBAQA.ord
+		join DBAQA.shipment_line shipment_line1
+                    on
+			shipment_line1.ordnum = ord.ordnum
+			and shipment_line1.client_id = ord.client_id
+			and shipment_line1.wh_id = ord.wh_id
+		join DBAQA.shipment
+                    on
+			shipment.ship_id = shipment_line1.ship_id
+			and shipment.wh_id = shipment_line1.wh_id
+		join DBAQA.all_inventory_view
+                    on
+			all_inventory_view.ship_line_id = shipment_line1.ship_line_id
+			and all_inventory_view.wh_id = shipment_line1.wh_id
+			and all_inventory_view.prtnum = shipment_line1.prtnum
+			and all_inventory_view.prt_client_id = shipment_line1.prt_client_id
+		join DBAQA.stop stop_2
+                    on
+			stop_2.stop_id = shipment.stop_id
+		join DBAQA.car_move car_move2
+                    on
+			car_move2.car_move_id = stop_2.car_move_id
+		left
+                  join DBAQA.trlr
+                    on
+			trlr.trlr_id = car_move2.trlr_id
+		join DBAQA.cstmst
+                    on
+			cstmst.cstnum = ord.stcust
+		join DBAQA.adrmst
+                    on
+			adrmst.adr_id = cstmst.adr_id
+		join DBAQA.prtmst prt1
+                    on
+			prt1.prtnum = all_inventory_view.prtnum
+			and prt1.prt_client_id = all_inventory_view.prt_client_id
+			and prt1.wh_id_tmpl = all_inventory_view.wh_id
+		join DBAQA.dscmst
+                    on
+			colnam = /*#nobind*/
+			'ordtyp|wh_id' /*#bind*/
+			and colval = /*=varchar(*/
+			nvl(ord.ordtyp,
+			rtrim(' ')) || '|' || nvl(ord.wh_id,
+			rtrim(' '))/*=)*/
+			/*#bind*/
+				and dscmst.locale_id = 'ES-ES'
+			join DBAQA.ord_line
+                    on
+				ord_line.client_id = ord.client_id
+				and ord_line.ordnum = ord.ordnum
+				and ord_line.wh_id = ord.wh_id
+				and ord_line.client_id = shipment_line1.client_id
+				and ord_line.ordnum = shipment_line1.ordnum
+				and ord_line.ordlin = shipment_line1.ordlin
+				and ord_line.ordsln = shipment_line1.ordsln
+				and ord_line.wh_id = shipment_line1.wh_id
+				and ord_line.prt_client_id = shipment_line1.prt_client_id
+				and ord_line.prtnum = shipment_line1.prtnum
+			join DBAQA.prtfam
+                    on
+				prtfam.prtfam = prt1.prtfam
+			join DBAQA.prtfam_grp
+                    on
+				prtfam_grp.prtfamgrp = prtfam.prtfamgrp
+			join DBAQA.dscmst prtfamgrp_dsc
+                    on
+				prtfamgrp_dsc.colnam = /*#nobind*/
+				'prtfamgrp' /*#bind*/
+				and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
+				and prtfamgrp_dsc.locale_id = 'ES-ES'
+			join DBAQA.locmst
+                    on
+				locmst.stoloc = all_inventory_view.stoloc
+				and locmst.mov_zone_id = '10038'
+			where
+				ord.wh_id = :wh_id
+				and car_move2.car_move_id = (
+				select
+					distinct cr.car_move_id
+				from
+					DBAQA.all_inventory_view aiv
+				join DBAQA.shipment_line sl
+                                                    on
+					aiv.ship_line_id = sl.ship_line_id
+				join DBAQA.shipment sh
+                                                    on
+					sh.ship_id = sl.ship_id
+				join DBAQA.stop st
+                                                    on
+					st.stop_id = sh.stop_id
+				join DBAQA.car_move cr
+                                                    on
+					cr.car_move_id = st.car_move_id
+				where
+					lodnum = :lodnum)
+				and all_inventory_view.phyflg = 0
+			group by
+				all_inventory_view.subnum,
+				prtfam.prtfamgrp) sumas) cajas_consolidadas,
+					   
+       (
+	select
+		nvl(sum(sumas.suma),
+		0)/*obtener cajas no listas en sitio*/
+	from
+		(
+		select
+			ceil((
+			select
+				sum(lod1.untqty / lod1.untcas)
+			from
+				DBAQA.all_inventory_view lod1
+			where
+				lod1.subnum = all_inventory_view.subnum)) as suma,
+			prtfam.prtfamgrp
+		from
+			DBAQA.ord
+		join DBAQA.shipment_line shipment_line1
+                    on
+			shipment_line1.ordnum = ord.ordnum
+			and shipment_line1.client_id = ord.client_id
+			and shipment_line1.wh_id = ord.wh_id
+		join DBAQA.shipment
+                    on
+			shipment.ship_id = shipment_line1.ship_id
+			and shipment.wh_id = shipment_line1.wh_id
+		join DBAQA.all_inventory_view
+                    on
+			all_inventory_view.ship_line_id = shipment_line1.ship_line_id
+			and all_inventory_view.wh_id = shipment_line1.wh_id
+			and all_inventory_view.prtnum = shipment_line1.prtnum
+			and all_inventory_view.prt_client_id = shipment_line1.prt_client_id
+		join DBAQA.stop stop_2
+                    on
+			stop_2.stop_id = shipment.stop_id
+		join DBAQA.car_move car_move2
+                    on
+			car_move2.car_move_id = stop_2.car_move_id
+		left
+                  join DBAQA.trlr
+                    on
+			trlr.trlr_id = car_move2.trlr_id
+		join DBAQA.cstmst
+                    on
+			cstmst.cstnum = ord.stcust
+		join DBAQA.adrmst
+                    on
+			adrmst.adr_id = cstmst.adr_id
+		join DBAQA.prtmst prt1
+                    on
+			prt1.prtnum = all_inventory_view.prtnum
+			and prt1.prt_client_id = all_inventory_view.prt_client_id
+			and prt1.wh_id_tmpl = all_inventory_view.wh_id
+		join DBAQA.dscmst
+                    on
+			colnam = /*#nobind*/
+			'ordtyp|wh_id' /*#bind*/
+			and colval = /*=varchar(*/
+			nvl(ord.ordtyp,
+			rtrim(' ')) || '|' || nvl(ord.wh_id,
+			rtrim(' '))/*=)*/
+			/*#bind*/
+				and dscmst.locale_id = 'ES-ES'
+			join DBAQA.ord_line
+                    on
+				ord_line.client_id = ord.client_id
+				and ord_line.ordnum = ord.ordnum
+				and ord_line.wh_id = ord.wh_id
+				and ord_line.client_id = shipment_line1.client_id
+				and ord_line.ordnum = shipment_line1.ordnum
+				and ord_line.ordlin = shipment_line1.ordlin
+				and ord_line.ordsln = shipment_line1.ordsln
+				and ord_line.wh_id = shipment_line1.wh_id
+				and ord_line.prt_client_id = shipment_line1.prt_client_id
+				and ord_line.prtnum = shipment_line1.prtnum
+			join DBAQA.prtfam
+                    on
+				prtfam.prtfam = prt1.prtfam
+			join DBAQA.prtfam_grp
+                    on
+				prtfam_grp.prtfamgrp = prtfam.prtfamgrp
+			join DBAQA.dscmst prtfamgrp_dsc
+                    on
+				prtfamgrp_dsc.colnam = /*#nobind*/
+				'prtfamgrp' /*#bind*/
+				and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
+				and prtfamgrp_dsc.locale_id = 'ES-ES'
+			join DBAQA.locmst
+                    on
+				locmst.stoloc = all_inventory_view.stoloc
+				and locmst.mov_zone_id <> '10038'
+				and locmst.stoloc not like 'TRL%'
+			where
+				ord.wh_id = :wh_id
+				and car_move2.car_move_id = (
+				select
+					distinct cr.car_move_id
+				from
+					DBAQA.all_inventory_view aiv
+				join DBAQA.shipment_line sl
+                                                    on
+					aiv.ship_line_id = sl.ship_line_id
+				join DBAQA.shipment sh
+                                                    on
+					sh.ship_id = sl.ship_id
+				join DBAQA.stop st
+                                                    on
+					st.stop_id = sh.stop_id
+				join DBAQA.car_move cr
+                                                    on
+					cr.car_move_id = st.car_move_id
+				where
+					lodnum = :lodnum)
+				and all_inventory_view.phyflg = 0
+			group by
+				all_inventory_view.subnum,
+				prtfam.prtfamgrp) sumas) cajas_no_consolidadas,
+					
+					
+       (
+	select
+		count(distinct all_inventory_view.subnum)/*obtener cajas fisicas cargadas en trailer*/
+	from
+		DBAQA.car_move
+	join DBAQA.stop
+            on
+		stop.car_move_id = car_move.car_move_id
+	join DBAQA.shipment
+            on
+		shipment.stop_id = stop.stop_id
+	join DBAQA.shipment_line
+            on
+		shipment_line.ship_id = shipment.ship_id
+	left
+          join DBAQA.all_inventory_view
+            on
+		all_inventory_view.ship_line_id = shipment_line.ship_line_id
+		and all_inventory_view.wh_id = shipment_line.wh_id
+		and all_inventory_view.wh_id = shipment.wh_id
+	join DBAQA.prtmst
+            on
+		all_inventory_view.prtnum = prtmst.prtnum
+		and all_inventory_view.prt_client_id = prtmst.prt_client_id
+		and all_inventory_view.wh_id = prtmst.wh_id_tmpl
+	join DBAQA.prtfam
+            on
+		prtfam.prtfam = prtmst.prtfam
+	join DBAQA.prtfam_grp
+            on
+		prtfam_grp.prtfamgrp = prtfam.prtfamgrp
+	left
+          join DBAQA.prtdsc
+            on
+		prtdsc.colnam = /*#nobind*/
+		'prtnum|prt_client_id|wh_id_tmpl' /*#bind*/
+		and prtdsc.colval = prtmst.prtnum || '|' || prtmst.prt_client_id || '|' || prtmst.wh_id_tmpl
+		and prtdsc.locale_id = /*#nobind*/
+		'ES-ES' /*#bind*/
+	join DBAQA.dscmst prtfamgrp_dsc
+            on
+		prtfamgrp_dsc.colnam = /*#nobind*/
+		'prtfamgrp' /*#bind*/
+		and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
+		and prtfamgrp_dsc.locale_id = 'ES-ES'
+	join DBAQA.locmst
+            on
+		locmst.stoloc = all_inventory_view.stoloc
+		and locmst.stoloc like 'TRL%'
+	where
+		all_inventory_view.wh_id = :wh_id
+		and car_move.car_move_id = (
+		select
+			distinct cr.car_move_id
+		from
+			DBAQA.all_inventory_view aiv
+		join DBAQA.shipment_line sl
+                                           on
+			aiv.ship_line_id = sl.ship_line_id
+		join DBAQA.shipment sh
+                                           on
+			sh.ship_id = sl.ship_id
+		join DBAQA.stop st
+                                           on
+			st.stop_id = sh.stop_id
+		join DBAQA.car_move cr
+                                           on
+			cr.car_move_id = st.car_move_id
+		where
+			lodnum = :lodnum)
+		and (all_inventory_view.phyflg = 1)) +
+		   
+       (
+	select
+		nvl(sum(sumas.suma),
+		0)/*obtener cajas no fisicas cargadas en trailer*/
+	from
+		(
+		select
+			ceil((
+			select
+				sum(lod1.untqty / lod1.untcas)
+			from
+				DBAQA.all_inventory_view lod1
+			where
+				lod1.subnum = all_inventory_view.subnum)) as suma,
+			prtfam.prtfamgrp
+		from
+			DBAQA.ord
+		join DBAQA.shipment_line shipment_line1
+                    on
+			shipment_line1.ordnum = ord.ordnum
+			and shipment_line1.client_id = ord.client_id
+			and shipment_line1.wh_id = ord.wh_id
+		join DBAQA.shipment
+                    on
+			shipment.ship_id = shipment_line1.ship_id
+			and shipment.wh_id = shipment_line1.wh_id
+		join DBAQA.all_inventory_view
+                    on
+			all_inventory_view.ship_line_id = shipment_line1.ship_line_id
+			and all_inventory_view.wh_id = shipment_line1.wh_id
+			and all_inventory_view.prtnum = shipment_line1.prtnum
+			and all_inventory_view.prt_client_id = shipment_line1.prt_client_id
+		join DBAQA.stop stop_2
+                    on
+			stop_2.stop_id = shipment.stop_id
+		join DBAQA.car_move car_move2
+                    on
+			car_move2.car_move_id = stop_2.car_move_id
+		left
+                  join DBAQA.trlr
+                    on
+			trlr.trlr_id = car_move2.trlr_id
+		join DBAQA.cstmst
+                    on
+			cstmst.cstnum = ord.stcust
+		join DBAQA.adrmst
+                    on
+			adrmst.adr_id = cstmst.adr_id
+		join DBAQA.prtmst prt1
+                    on
+			prt1.prtnum = all_inventory_view.prtnum
+			and prt1.prt_client_id = all_inventory_view.prt_client_id
+			and prt1.wh_id_tmpl = all_inventory_view.wh_id
+		join DBAQA.dscmst
+                    on
+			colnam = /*#nobind*/
+			'ordtyp|wh_id' /*#bind*/
+			and colval = /*=varchar(*/
+			nvl(ord.ordtyp,
+			rtrim(' ')) || '|' || nvl(ord.wh_id,
+			rtrim(' '))/*=)*/
+			/*#bind*/
+				and dscmst.locale_id = 'ES-ES'
+			join DBAQA.ord_line
+                    on
+				ord_line.client_id = ord.client_id
+				and ord_line.ordnum = ord.ordnum
+				and ord_line.wh_id = ord.wh_id
+				and ord_line.client_id = shipment_line1.client_id
+				and ord_line.ordnum = shipment_line1.ordnum
+				and ord_line.ordlin = shipment_line1.ordlin
+				and ord_line.ordsln = shipment_line1.ordsln
+				and ord_line.wh_id = shipment_line1.wh_id
+				and ord_line.prt_client_id = shipment_line1.prt_client_id
+				and ord_line.prtnum = shipment_line1.prtnum
+			join DBAQA.prtfam
+                    on
+				prtfam.prtfam = prt1.prtfam
+			join DBAQA.prtfam_grp
+                    on
+				prtfam_grp.prtfamgrp = prtfam.prtfamgrp
+			join DBAQA.dscmst prtfamgrp_dsc
+                    on
+				prtfamgrp_dsc.colnam = /*#nobind*/
+				'prtfamgrp' /*#bind*/
+				and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
+				and prtfamgrp_dsc.locale_id = 'ES-ES'
+			join DBAQA.locmst
+                    on
+				locmst.stoloc = all_inventory_view.stoloc
+				and locmst.stoloc like 'TRL%'
+			where
+				ord.wh_id = :wh_id
+				and car_move2.car_move_id = (
+				select
+					distinct cr.car_move_id
+				from
+					DBAQA.all_inventory_view aiv
+				join DBAQA.shipment_line sl
+                                                    on
+					aiv.ship_line_id = sl.ship_line_id
+				join DBAQA.shipment sh
+                                                    on
+					sh.ship_id = sl.ship_id
+				join DBAQA.stop st
+                                                    on
+					st.stop_id = sh.stop_id
+				join DBAQA.car_move cr
+                                                    on
+					cr.car_move_id = st.car_move_id
+				where
+					lodnum = :lodnum)
+				and all_inventory_view.phyflg = 0
+			group by
+				all_inventory_view.subnum,
+				prtfam.prtfamgrp) sumas) cajas_cargadas,
+	(
+	select
+		count(distinct all_inventory_view.subnum)
+                /*obtener cajas fisicas en LPN*/
+	from
+		DBAQA.car_move
+	join DBAQA.stop
+             on
+		stop.car_move_id = car_move.car_move_id
+	join DBAQA.shipment
+             on
+		shipment.stop_id = stop.stop_id
+	join DBAQA.shipment_line
+             on
+		shipment_line.ship_id = shipment.ship_id
+	left
+           join DBAQA.all_inventory_view
+             on
+		all_inventory_view.ship_line_id = shipment_line.ship_line_id
+		and all_inventory_view.wh_id = shipment_line.wh_id
+		and all_inventory_view.wh_id = shipment.wh_id
+	join DBAQA.prtmst
+             on
+		all_inventory_view.prtnum = prtmst.prtnum
+		and all_inventory_view.prt_client_id = prtmst.prt_client_id
+		and all_inventory_view.wh_id = prtmst.wh_id_tmpl
+	join DBAQA.prtfam
+             on
+		prtfam.prtfam = prtmst.prtfam
+	join DBAQA.prtfam_grp
+             on
+		prtfam_grp.prtfamgrp = prtfam.prtfamgrp
+	left
+           join DBAQA.prtdsc
+             on
+		prtdsc.colnam = /*#nobind*/
+		'prtnum|prt_client_id|wh_id_tmpl' /*#bind*/
+		and prtdsc.colval = prtmst.prtnum || '|' || prtmst.prt_client_id || '|' || prtmst.wh_id_tmpl
+		and prtdsc.locale_id = /*#nobind*/
+		'ES-ES' /*#bind*/
+	join DBAQA.dscmst prtfamgrp_dsc
+             on
+		prtfamgrp_dsc.colnam = /*#nobind*/
+		'prtfamgrp' /*#bind*/
+		and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
+		and prtfamgrp_dsc.locale_id = 'ES-ES'
+	join DBAQA.locmst
+             on
+		locmst.stoloc = all_inventory_view.stoloc
+	where
+		all_inventory_view.wh_id = :wh_id
+		and all_inventory_view.lodnum = :lodnum
+		and (all_inventory_view.phyflg = 1)) + (
+	select
+		nvl(sum(sumas.suma),
+		0)
+                                                           /*obtener cajas no fisicas cargadas en LPN*/
+	from
+		(
+		select
+			ceil((
+			select
+				sum(lod1.untqty / lod1.untcas)
+			from
+				DBAQA.all_inventory_view lod1
+			where
+				lod1.subnum = all_inventory_view.subnum)) as suma,
+			prtfam.prtfamgrp
+		from
+			DBAQA.ord
+		join DBAQA.shipment_line shipment_line1
+                                                                on
+			shipment_line1.ordnum = ord.ordnum
+			and shipment_line1.client_id = ord.client_id
+			and shipment_line1.wh_id = ord.wh_id
+		join DBAQA.shipment
+                                                                on
+			shipment.ship_id = shipment_line1.ship_id
+			and shipment.wh_id = shipment_line1.wh_id
+		join DBAQA.all_inventory_view
+                                                                on
+			all_inventory_view.ship_line_id = shipment_line1.ship_line_id
+			and all_inventory_view.wh_id = shipment_line1.wh_id
+			and all_inventory_view.prtnum = shipment_line1.prtnum
+			and all_inventory_view.prt_client_id = shipment_line1.prt_client_id
+		join DBAQA.stop stop_2
+                                                                on
+			stop_2.stop_id = shipment.stop_id
+		join DBAQA.car_move car_move2
+                                                                on
+			car_move2.car_move_id = stop_2.car_move_id
+		left
+                                                              join DBAQA.trlr
+                                                                on
+			trlr.trlr_id = car_move2.trlr_id
+		join DBAQA.cstmst
+                                                                on
+			cstmst.cstnum = ord.stcust
+		join DBAQA.adrmst
+                                                                on
+			adrmst.adr_id = cstmst.adr_id
+		join DBAQA.prtmst prt1
+                                                                on
+			prt1.prtnum = all_inventory_view.prtnum
+			and prt1.prt_client_id = all_inventory_view.prt_client_id
+			and prt1.wh_id_tmpl = all_inventory_view.wh_id
+		join DBAQA.dscmst
+                                                                on
+			colnam = /*#nobind*/
+			'ordtyp|wh_id' /*#bind*/
+			and colval = /*=varchar(*/
+			nvl(ord.ordtyp,
+			rtrim(' ')) || '|' || nvl(ord.wh_id,
+			rtrim(' '))/*=)*/
+			/*#bind*/
+				and dscmst.locale_id = 'ES-ES'
+			join DBAQA.ord_line
+                                                                on
+				ord_line.client_id = ord.client_id
+				and ord_line.ordnum = ord.ordnum
+				and ord_line.wh_id = ord.wh_id
+				and ord_line.client_id = shipment_line1.client_id
+				and ord_line.ordnum = shipment_line1.ordnum
+				and ord_line.ordlin = shipment_line1.ordlin
+				and ord_line.ordsln = shipment_line1.ordsln
+				and ord_line.wh_id = shipment_line1.wh_id
+				and ord_line.prt_client_id = shipment_line1.prt_client_id
+				and ord_line.prtnum = shipment_line1.prtnum
+			join DBAQA.prtfam
+                                                                on
+				prtfam.prtfam = prt1.prtfam
+			join DBAQA.prtfam_grp
+                                                                on
+				prtfam_grp.prtfamgrp = prtfam.prtfamgrp
+			join DBAQA.dscmst prtfamgrp_dsc
+                                                                on
+				prtfamgrp_dsc.colnam = /*#nobind*/
+				'prtfamgrp' /*#bind*/
+				and prtfamgrp_dsc.colval = prtfam_grp.prtfamgrp
+				and prtfamgrp_dsc.locale_id = 'ES-ES'
+			join DBAQA.locmst
+                                                                on
+				locmst.stoloc = all_inventory_view.stoloc
+			where
+				all_inventory_view.wh_id = 'AVIOR-27'
+				and all_inventory_view.lodnum = :lodnum
+				and all_inventory_view.phyflg = 0
+			group by
+				all_inventory_view.subnum,
+				prtfam.prtfamgrp) sumas) cajas_en_LPN,
+	(
+	select
+		distinct nvl(max('1'),
+		0)
+	from
+		DBAQA.all_inventory_view aiv
+	join DBAQA.pckwrk_view pwv
+            on
+		aiv.wrkref = pwv.wrkref
+	join DBAQA.ord
+            on
+		pwv.ordnum = ord.ordnum
+	where
+		aiv.lodnum = :lodnum
+		and ord.ordtyp = 'S-URGE') urgente,
+	(
+	select
+		distinct nvl(max('1'),
+		0)
+	from
+		DBAQA.all_inventory_view aiv
+	join DBAQA.pckwrk_view pwv
+            on
+		aiv.wrkref = pwv.wrkref
+	join DBAQA.ord
+            on
+		pwv.ordnum = ord.ordnum
+	where
+		aiv.lodnum = :lodnum
+		and ord.ordtyp = 'S-SPUR') sop_vida,
+	(
+	select
+		distinct nvl(max('1'),
+		0)
+	from
+		DBAQA.all_inventory_view aiv
+	join DBAQA.prtmst pm
+            on
+		aiv.prtnum = pm.prtnum
+		and aiv.wh_id = pm.wh_id_tmpl
+	where
+		pm.prtfam = '401'
+		and lodnum = :lodnum) controlado
+from
+	dual"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
 		<flow-ref doc:name="client-db-wms-cajas-carton-order" doc:id="20daf094-882a-4a33-9f39-7c72d82de4e4" name="client-db-wms-cajas-carton-order"/>
 		<ee:transform doc:name="Transform Message" doc:id="af404fec-0c56-47df-9f01-0ba5feb6445b" >
 			<ee:message >

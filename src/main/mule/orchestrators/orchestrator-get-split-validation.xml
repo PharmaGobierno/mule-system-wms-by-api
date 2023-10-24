@@ -24,6 +24,7 @@ output application/json
 			<ee:variables>
 				<ee:set-variable variableName="querySplitValidation" ><![CDATA[%dw 2.0
 output application/json
+var DBAQA = p('database.wms.blueyonder.schema')
 ---
 "select
 distinct ord.ordnum,
@@ -31,9 +32,9 @@ distinct ord.ordnum,
         when count(distinct shipment.ship_id) > 1 then 1
         else 0
     end split
-from TRXWMSPRD.ord
-    join TRXWMSPRD.shipment_line on shipment_line.ordnum = ord.ordnum
-    join TRXWMSPRD.shipment on shipment.ship_id = shipment_line.ship_id 
+from DBAQA.ord
+    join DBAQA.shipment_line on shipment_line.ordnum = ord.ordnum
+    join DBAQA.shipment on shipment.ship_id = shipment_line.ship_id 
     and shipment.shpsts != 'B'
 where ord.ordnum in (" ++ payload ++ ")
 group by ord.ordnum"

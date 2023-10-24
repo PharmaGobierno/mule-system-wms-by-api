@@ -5,6 +5,161 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="orchestrator-get-lines-Flow" doc:id="36b6f38e-9839-4516-82eb-9590e3b9dc52" >
+		<ee:transform doc:name="set Query" doc:id="0dc598fd-51b8-4d05-874b-ca55bb22a31d" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="getLines" ><![CDATA[%dw 2.0
+output application/java
+var DBAQA = p('database.wms.blueyonder.schema')
+---
+"select shipment.host_ext_id host_ship_id,
+                shipment.host_client_id host_client_id,
+                shipment_line.ship_id ship_id,
+                shipment_line.ordnum ordnum,
+                shipment_line.ordlin ordlin,
+                shipment_line.ordsln ordsln,
+                ord_line.prtnum prtnum,
+                pckwrk_view.lotnum,
+                pckwrk_view.orgcod,
+                pckwrk_view.revlvl,
+                pckwrk_view.mandte,
+                pckwrk_view.expire_dte,
+                ord_line.invsts_prg invsts_prg,
+                ord_line.client_id,
+                '+' comsgn,
+                sum(pckwrk_view.pckqty) comqty,
+                ord.wh_id,
+                pckwrk_view.inv_attr_str1,
+                pckwrk_view.inv_attr_str2,
+                pckwrk_view.inv_attr_str3,
+                pckwrk_view.inv_attr_str4,
+                pckwrk_view.inv_attr_str5,
+                pckwrk_view.inv_attr_str6,
+                pckwrk_view.inv_attr_str7,
+                pckwrk_view.inv_attr_str8,
+                pckwrk_view.inv_attr_str9,
+                pckwrk_view.inv_attr_str10,
+                pckwrk_view.inv_attr_str11,
+                pckwrk_view.inv_attr_str12,
+                pckwrk_view.inv_attr_str13,
+                pckwrk_view.inv_attr_str14,
+                pckwrk_view.inv_attr_str15,
+                pckwrk_view.inv_attr_str16,
+                pckwrk_view.inv_attr_str17,
+                pckwrk_view.inv_attr_str18,
+                pckwrk_view.inv_attr_int1,
+                pckwrk_view.inv_attr_int2,
+                pckwrk_view.inv_attr_int3,
+                pckwrk_view.inv_attr_int4,
+                pckwrk_view.inv_attr_int5,
+                pckwrk_view.inv_attr_flt1,
+                pckwrk_view.inv_attr_flt2,
+                pckwrk_view.inv_attr_flt3,
+                pckwrk_view.inv_attr_dte1,
+                pckwrk_view.inv_attr_dte2,
+                (select value
+                   from DBAQA.alloc_rule_dtl ruldtl
+                  where ruldtl.field_name = 'rttn_id'
+                    and rulhdr.cplx_flg = 0
+                    and ruldtl.rule_nam = rulhdr.rule_nam
+                    and ruldtl.wh_id = ord.wh_id
+                    and ruldtl.rule_nam = ord_line.rule_nam) rttn_id,
+                (select value
+                   from DBAQA.alloc_rule_dtl ruldtl
+                  where ruldtl.field_name = 'cstms_bond_flg'
+                    and rulhdr.cplx_flg = 0
+                    and ruldtl.rule_nam = rulhdr.rule_nam
+                    and ruldtl.wh_id = ord.wh_id
+                    and ruldtl.rule_nam = ord_line.rule_nam) cstms_bond_flg,
+                (select value
+                   from DBAQA.alloc_rule_dtl ruldtl
+                  where ruldtl.field_name = 'dty_stmp_flg'
+                    and rulhdr.cplx_flg = 0
+                    and ruldtl.rule_nam = rulhdr.rule_nam
+                    and ruldtl.wh_id = ord.wh_id
+                    and ruldtl.rule_nam = ord_line.rule_nam) dty_stmp_flg,
+                ord_line.asset_typ,
+                ord_line.load_attr1_cfg,
+                ord_line.load_attr2_cfg,
+                ord_line.load_attr3_cfg,
+                ord_line.load_attr4_cfg,
+                ord_line.load_attr5_cfg
+           from DBAQA.shipment,
+                DBAQA.pckwrk_view,
+                DBAQA.ord,
+                DBAQA.shipment_line,
+                DBAQA.ord_line
+           left outer
+           join DBAQA.alloc_rule_hdr rulhdr
+             on rulhdr.rule_nam = ord_line.rule_nam
+            and rulhdr.wh_id = ord_line.wh_id
+          where shipment.ship_id = shipment_line.ship_id
+          	and pckwrk_view.wrktyp = 'P' 
+            and pckwrk_view.ship_line_id = shipment_line.ship_line_id
+            and ord.ordnum = ord_line.ordnum
+            and ord.client_id = ord_line.client_id
+            and ord.wh_id = ord_line.wh_id
+            and ord_line.client_id = shipment_line.client_id
+            and ord_line.ordnum = shipment_line.ordnum
+            and ord_line.ordlin = shipment_line.ordlin
+            and ord_line.ordsln = shipment_line.ordsln
+            and ord_line.wh_id = shipment_line.wh_id
+            and ord.ordnum = :orderNumber
+          group by shipment.host_ext_id,
+                shipment.host_client_id,
+                shipment_line.ship_id,
+                shipment_line.ordnum,
+                shipment_line.ordlin,
+                shipment_line.ordsln,
+                ord_line.prtnum,
+                pckwrk_view.lotnum,
+                pckwrk_view.orgcod,
+                pckwrk_view.revlvl,
+                pckwrk_view.mandte,
+                pckwrk_view.expire_dte,
+                ord_line.invsts_prg,
+                ord_line.client_id,
+                ord.wh_id,
+                pckwrk_view.inv_attr_str1,
+                pckwrk_view.inv_attr_str2,
+                pckwrk_view.inv_attr_str3,
+                pckwrk_view.inv_attr_str4,
+                pckwrk_view.inv_attr_str5,
+                pckwrk_view.inv_attr_str6,
+                pckwrk_view.inv_attr_str7,
+                pckwrk_view.inv_attr_str8,
+                pckwrk_view.inv_attr_str9,
+                pckwrk_view.inv_attr_str10,
+                pckwrk_view.inv_attr_str11,
+                pckwrk_view.inv_attr_str12,
+                pckwrk_view.inv_attr_str13,
+                pckwrk_view.inv_attr_str14,
+                pckwrk_view.inv_attr_str15,
+                pckwrk_view.inv_attr_str16,
+                pckwrk_view.inv_attr_str17,
+                pckwrk_view.inv_attr_str18,
+                pckwrk_view.inv_attr_int1,
+                pckwrk_view.inv_attr_int2,
+                pckwrk_view.inv_attr_int3,
+                pckwrk_view.inv_attr_int4,
+                pckwrk_view.inv_attr_int5,
+                pckwrk_view.inv_attr_flt1,
+                pckwrk_view.inv_attr_flt2,
+                pckwrk_view.inv_attr_flt3,
+                pckwrk_view.inv_attr_dte1,
+                pckwrk_view.inv_attr_dte2,
+                rulhdr.cplx_flg,
+                ord_line.rule_nam,
+                rulhdr.rule_nam,
+                ord_line.asset_typ,
+                ord_line.load_attr1_cfg,
+                ord_line.load_attr2_cfg,
+                ord_line.load_attr3_cfg,
+                ord_line.load_attr4_cfg,
+                ord_line.load_attr5_cfg"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
 		<flow-ref doc:name="client-db-wms-get-lines" doc:id="6a5597a1-594e-4c45-9c89-60d1a22dfce9" name="client-db-wms-get-lines"/>
 		<ee:transform doc:name="Transform Message" doc:id="6948d4d7-c243-4115-aafe-2702fdd6a921" >
 			<ee:message >

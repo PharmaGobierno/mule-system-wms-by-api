@@ -11,13 +11,14 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 			<ee:variables>
 				<ee:set-variable variableName="query"><![CDATA[%dw 2.0
 output application/json
+var DBAQA = p('database.wms.blueyonder.schema')
 ---
 "SELECT
     supm.supnum,
     adrm.ADRNAM
 FROM
-    trxwmsprd.supmst supm,
-    trxwmsprd.adrmst adrm
+    DBAQA.supmst supm,
+    DBAQA.adrmst adrm
 WHERE
     adrm.adr_id = supm.adr_id
     AND adrtyp = 'SUP' 
