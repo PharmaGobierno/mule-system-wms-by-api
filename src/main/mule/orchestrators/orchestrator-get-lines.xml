@@ -11,7 +11,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 			<ee:variables >
 				<ee:set-variable variableName="getLines" ><![CDATA[%dw 2.0
 output application/java
-var DBAQA = p('database.wms.blueyonder.schema')
+var schema = p('database.wms.blueyonder.schema')
 ---
 "select shipment.host_ext_id host_ship_id,
                 shipment.host_client_id host_client_id,
@@ -59,21 +59,21 @@ var DBAQA = p('database.wms.blueyonder.schema')
                 pckwrk_view.inv_attr_dte1,
                 pckwrk_view.inv_attr_dte2,
                 (select value
-                   from DBAQA.alloc_rule_dtl ruldtl
+                   from "++ schema ++".alloc_rule_dtl ruldtl
                   where ruldtl.field_name = 'rttn_id'
                     and rulhdr.cplx_flg = 0
                     and ruldtl.rule_nam = rulhdr.rule_nam
                     and ruldtl.wh_id = ord.wh_id
                     and ruldtl.rule_nam = ord_line.rule_nam) rttn_id,
                 (select value
-                   from DBAQA.alloc_rule_dtl ruldtl
+                   from "++ schema ++".alloc_rule_dtl ruldtl
                   where ruldtl.field_name = 'cstms_bond_flg'
                     and rulhdr.cplx_flg = 0
                     and ruldtl.rule_nam = rulhdr.rule_nam
                     and ruldtl.wh_id = ord.wh_id
                     and ruldtl.rule_nam = ord_line.rule_nam) cstms_bond_flg,
                 (select value
-                   from DBAQA.alloc_rule_dtl ruldtl
+                   from "++ schema ++".alloc_rule_dtl ruldtl
                   where ruldtl.field_name = 'dty_stmp_flg'
                     and rulhdr.cplx_flg = 0
                     and ruldtl.rule_nam = rulhdr.rule_nam
@@ -85,13 +85,13 @@ var DBAQA = p('database.wms.blueyonder.schema')
                 ord_line.load_attr3_cfg,
                 ord_line.load_attr4_cfg,
                 ord_line.load_attr5_cfg
-           from DBAQA.shipment,
-                DBAQA.pckwrk_view,
-                DBAQA.ord,
-                DBAQA.shipment_line,
-                DBAQA.ord_line
+           from "++ schema ++".shipment,
+                "++ schema ++".pckwrk_view,
+                "++ schema ++".ord,
+                "++ schema ++".shipment_line,
+                "++ schema ++".ord_line
            left outer
-           join DBAQA.alloc_rule_hdr rulhdr
+           join "++ schema ++".alloc_rule_hdr rulhdr
              on rulhdr.rule_nam = ord_line.rule_nam
             and rulhdr.wh_id = ord_line.wh_id
           where shipment.ship_id = shipment_line.ship_id

@@ -25,7 +25,7 @@ output application/json
 			<ee:variables>
 				<ee:set-variable variableName="queryLogisticFootprint" ><![CDATA[%dw 2.0
 output application/json
-var DBAQA = p('database.wms.blueyonder.schema')
+var schema = p('database.wms.blueyonder.schema')
 ---
 "SELECT 
     iv.uomcod,/*Pallets, Pieza, Caja, */
@@ -40,8 +40,8 @@ var DBAQA = p('database.wms.blueyonder.schema')
     pftpc.defftp_flg,
     pftpc.caslvl,
     iv.len * iv.wid * iv.hgt vol
-FROM DBAQA.prtftp_dtl iv,
-    (SELECT p.ftpcod, p.caslvl, p.defftp_flg FROM DBAQA.prtftp p  WHERE  p.wh_id = 'AVIOR-27') pftpc
+FROM "++ schema ++".prtftp_dtl iv,
+    (SELECT p.ftpcod, p.caslvl, p.defftp_flg FROM "++ schema ++".prtftp p  WHERE  p.wh_id = 'AVIOR-27') pftpc
 WHERE iv.ftpcod = pftpc.ftpcod
     AND iv.ftpcod IN ( " ++ payload ++ ") and
 	iv.wh_id='AVIOR-27'"

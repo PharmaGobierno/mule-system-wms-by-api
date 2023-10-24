@@ -20,14 +20,14 @@ output application/json
 []]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<ee:transform doc:name="set Query" doc:id="aae1a8fe-a1bb-4149-ac54-50b5330318e1" >
+		<ee:transform doc:name="Set Query" doc:id="aae1a8fe-a1bb-4149-ac54-50b5330318e1" >
 			<ee:message >
 			</ee:message>
 			<ee:variables >
 				<ee:set-variable variableName="querypartFoot" ><![CDATA[%dw 2.0
 output application/java
 
-var DBAQA = p('database.wms.blueyonder.schema')
+var schema = p('database.wms.blueyonder.schema')
 
 ---
 "select shipment.ship_id,
@@ -37,16 +37,16 @@ var DBAQA = p('database.wms.blueyonder.schema')
         stop.stop_id tipoestacion_parada,
         adrmst.adrln1 calle,
         (select lngdsc
-         from DBAQA.dscmst
+         from "++ schema ++".dscmst
          where colnam = 'adrstc'
 			AND locale_id = 'ES-ES'
             AND colval = 'MEX|' || adrmst.adrstc) estado,
         adrmst.ctry_name pais,
         (select sum(aiv_2.untqty)
-         from DBAQA.all_inventory_view aiv_2
+         from "++ schema ++".all_inventory_view aiv_2
          where aiv_2.subnum = all_inventory_view.subnum) total_mercancias,
         (select lngdsc
-         from DBAQA.dscmst
+         from "++ schema ++".dscmst
          where colnam = 'ctncod|wh_id'
 			and locale_id = 'ES-ES'
             and colval = pckwrk_view.ctncod || '|' || ord.wh_id) unidad_peso,
@@ -76,64 +76,64 @@ var DBAQA = p('database.wms.blueyonder.schema')
         ord.entdte fecha_levantamiento,
         prtmst.comcod partida_presupuestal,
 		shipment_line.pckgr1 monto
-from DBAQA.ord
-	join DBAQA.ord_line
+from "++ schema ++".ord
+	join "++ schema ++".ord_line
     on ord.ordnum = ord_line.ordnum
 		and ord.wh_id = ord_line.wh_id
 		and ord.client_id = ord_line.client_id
-	join DBAQA.adrmst
+	join "++ schema ++".adrmst
 	on adrmst.client_id = ord.client_id
 		and adrmst.host_ext_id = ord.stcust
 		and adrmst.adrtyp = 'CST'
-    join DBAQA.shipment_line
+    join "++ schema ++".shipment_line
     on shipment_line.ordnum = ord_line.ordnum
 		and shipment_line.ordlin = ord_line.ordlin
 		and shipment_line.wh_id = ord_line.wh_id
 		and shipment_line.client_id = ord_line.client_id
 		and shipment_line.linsts <> 'B'
-    join DBAQA.all_inventory_view
+    join "++ schema ++".all_inventory_view
     on all_inventory_view.wh_id = shipment_line.wh_id
 		and all_inventory_view.prt_client_id = shipment_line.prt_client_id
 		and all_inventory_view.ship_line_id = shipment_line.ship_line_id
-	left join DBAQA.prtmst
+	left join "++ schema ++".prtmst
 	on all_inventory_view.prtnum = prtmst.prtnum
 		and all_inventory_view.prt_client_id = prtmst.prt_client_id
 		and prtmst.wh_id_tmpl = 'AVIOR-27'
-	left join DBAQA.prtdsc
+	left join "++ schema ++".prtdsc
 	on prtdsc.colnam = 'prtnum|prt_client_id|wh_id_tmpl'
 		and prtdsc.colval = all_inventory_view.prtnum || '|' || all_inventory_view.prt_client_id || '|' || all_inventory_view.wh_id
-	left join DBAQA.alt_prtmst altprt_sat
+	left join "++ schema ++".alt_prtmst altprt_sat
 	on all_inventory_view.prtnum = altprt_sat.prtnum
 		and all_inventory_view.prt_client_id = altprt_sat.prt_client_id
 		and altprt_sat.alt_prt_typ = 'SAT'
         /* Huella pieza */
-	left join DBAQA.prtftp_dtl
+	left join "++ schema ++".prtftp_dtl
 	on all_inventory_view.wh_id = prtftp_dtl.wh_id
 		and all_inventory_view.prtnum = prtftp_dtl.prtnum
 		and all_inventory_view.ftpcod = prtftp_dtl.ftpcod
 		and prtftp_dtl.uomlvl = 0
-	join DBAQA.shipment
+	join "++ schema ++".shipment
 	on shipment.ship_id = shipment_line.ship_id
 		and shipment.wh_id = shipment_line.wh_id
 		and shipment.shpsts <> 'B'
-	join DBAQA.stop
+	join "++ schema ++".stop
     on shipment.stop_id = stop.stop_id
-	join DBAQA.car_move
+	join "++ schema ++".car_move
     on stop.car_move_id = car_move.car_move_id
-	join DBAQA.trlr
+	join "++ schema ++".trlr
     on car_move.trlr_id = trlr.trlr_id
 		and trlr.trlr_cod = 'SHIP'
-	left join DBAQA.pckwrk_view
+	left join "++ schema ++".pckwrk_view
 	on pckwrk_view.client_id = shipment_line.client_id
 		and pckwrk_view.wh_id = shipment_line.wh_id
 		and pckwrk_view.ship_id = shipment_line.ship_id
 		and pckwrk_view.ordnum = shipment_line.ordnum
 		and pckwrk_view.prtnum = 'KITPART'
-	left join DBAQA.carhdr
+	left join "++ schema ++".carhdr
 	on car_move.carcod = carhdr.carcod
-	left join DBAQA.adrmst adrmst_car
+	left join "++ schema ++".adrmst adrmst_car
     on carhdr.adr_id = adrmst_car.adr_id
-	left join DBAQA.powerunit
+	left join "++ schema ++".powerunit
 	on car_move.carcod = powerunit.carcod
 	AND trlr.powerunit_id = powerunit.powerunit_id
 where ord.wh_id = 'AVIOR-27'
@@ -204,7 +204,7 @@ output application/json
 			<ee:variables>
 				<ee:set-variable variableName="queryBoxQuantity" ><![CDATA[%dw 2.0
 output application/json
-var DBAQA = p('database.wms.blueyonder.schema')
+var schema = p('database.wms.blueyonder.schema')
 ---
 "SELECT
 	DISTINCT shipment_line.ordnum ordnum,
@@ -213,10 +213,10 @@ var DBAQA = p('database.wms.blueyonder.schema')
 	SELECT
 		COUNT(DISTINCT all_inv_v1.subnum) cajas_carton
 	FROM
-		DBAQA.shipment shipment_1
-	JOIN DBAQA.shipment_line shipment_lin1 ON
+		"++ schema ++".shipment shipment_1
+	JOIN "++ schema ++".shipment_line shipment_lin1 ON
 		shipment_lin1.ship_id = shipment_1.ship_id
-	LEFT JOIN DBAQA.all_inventory_view all_inv_v1 ON
+	LEFT JOIN "++ schema ++".all_inventory_view all_inv_v1 ON
 		all_inv_v1.ship_line_id = shipment_lin1.ship_line_id
 		AND all_inv_v1.wh_id = shipment_lin1.wh_id
 		AND all_inv_v1.wh_id = shipment_1.wh_id
@@ -235,15 +235,15 @@ var DBAQA = p('database.wms.blueyonder.schema')
 			SELECT
 				SUM(lod1.untqty / lod1.untcas)
 			FROM
-				DBAQA.all_inventory_view lod1
+				"++ schema ++".all_inventory_view lod1
 			WHERE
 				lod1.subnum = all_inv_v2.subnum )) AS suma
 		FROM
-			DBAQA.shipment_line shipment_line2
-		JOIN DBAQA.shipment shipment_2 ON
+			"++ schema ++".shipment_line shipment_line2
+		JOIN "++ schema ++".shipment shipment_2 ON
 			shipment_2.ship_id = shipment_line2.ship_id
 			AND shipment_2.wh_id = shipment_line2.wh_id
-		LEFT JOIN DBAQA.all_inventory_view all_inv_v2 ON
+		LEFT JOIN "++ schema ++".all_inventory_view all_inv_v2 ON
 			all_inv_v2.ship_line_id = shipment_line2.ship_line_id
 			AND all_inv_v2.wh_id = shipment_line2.wh_id
 			AND all_inv_v2.prtnum = shipment_line2.prtnum
@@ -256,8 +256,8 @@ var DBAQA = p('database.wms.blueyonder.schema')
 			all_inv_v2.subnum) sumas),
 	0) ) bultos_por_orden
 FROM
-	DBAQA.shipment
-JOIN DBAQA.shipment_line ON
+	"++ schema ++".shipment
+JOIN "++ schema ++".shipment_line ON
 	shipment.ship_id = shipment_line.ship_id
 WHERE
 	1 = 1

@@ -28,20 +28,20 @@ output application/json
 			<ee:variables>
 				<ee:set-variable variableName="querySplitNumber"><![CDATA[%dw 2.0
 output application/json
-var DBAQA = p('database.wms.blueyonder.schema')
+var schema = p('database.wms.blueyonder.schema')
 ---
 "  WITH Enviados AS (
     SELECT DISTINCT sl.ORDNUM ,COUNT(DISTINCT sl.SHIP_ID) AS ENVIOS
-    FROM DBAQA.shipmenT_LINE sl
+    FROM "++ schema ++".shipmenT_LINE sl
     WHERE sl.ORDNUM in (" ++ payload ++ ")
     GROUP BY ORDNUM
 ),
 Despachados AS (
     SELECT COUNT(DISTINCT cm.car_move_id) AS DESPACHADOS
-    FROM DBAQA.car_move cm
-    JOIN DBAQA.stop st ON cm.car_move_id = st.car_move_id
-    JOIN DBAQA.shipment shp ON st.stop_id = shp.stop_id
-    JOIN DBAQA.shipmenT_LINE shpl ON shp.ship_id = shpl.ship_id
+    FROM "++ schema ++".car_move cm
+    JOIN "++ schema ++".stop st ON cm.car_move_id = st.car_move_id
+    JOIN "++ schema ++".shipment shp ON st.stop_id = shp.stop_id
+    JOIN "++ schema ++".shipmenT_LINE shpl ON shp.ship_id = shpl.ship_id
     WHERE cm.wh_sts = 'WHCOMPLETE'
     AND shpl.ORDNUM in (" ++ payload ++ ")
 )

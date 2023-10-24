@@ -26,20 +26,20 @@ output application/json
 			<ee:variables >
 				<ee:set-variable variableName="shStatus" ><![CDATA[%dw 2.0
 output application/java
-var DBAQA = p('database.wms.blueyonder.schema')
+var schema = p('database.wms.blueyonder.schema')
 ---
 "select
-	distinct DBAQA.sl_dwnld.*
+	distinct "++ schema ++".sl_dwnld.*
 from
-	DBAQA.sl_ifd_data_dtl
-join DBAQA.sl_ifd_data_hdr
+	"++ schema ++".sl_ifd_data_dtl
+join "++ schema ++".sl_ifd_data_hdr
      on
-	DBAQA.sl_ifd_data_hdr.ifd_data_seq = sl_ifd_data_dtl.ifd_data_seq
-join DBAQA.sl_dwnld
+	"++ schema ++".sl_ifd_data_hdr.ifd_data_seq = sl_ifd_data_dtl.ifd_data_seq
+join "++ schema ++".sl_dwnld
      on
-	DBAQA.sl_dwnld.dwnld_seq = sl_ifd_data_hdr.dwnld_seq
+	"++ schema ++".sl_dwnld.dwnld_seq = sl_ifd_data_hdr.dwnld_seq
 where
-	DBAQA.sl_dwnld.DWNLD_SEQ like :downloadSequence"]]></ee:set-variable>
+	"++ schema ++".sl_dwnld.DWNLD_SEQ like :downloadSequence"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-download-sequence" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-download-sequence" />

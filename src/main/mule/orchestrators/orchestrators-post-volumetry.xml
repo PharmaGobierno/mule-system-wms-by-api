@@ -25,7 +25,7 @@ output application/json
 			<ee:variables>
 				<ee:set-variable variableName="queryVolumetry" ><![CDATA[%dw 2.0
 output application/json
-var DBAQA = p('database.wms.blueyonder.schema')
+var schema = p('database.wms.blueyonder.schema')
 ---
 "SELECT
 	prtnum,
@@ -35,7 +35,7 @@ var DBAQA = p('database.wms.blueyonder.schema')
 	uomcod,
 	ftpcod
 FROM
-	DBAQA.PRTFTP_DTL
+	"++ schema ++".PRTFTP_DTL
 WHERE
 	prtnum IN (" ++ payload ++ ")
 	AND wh_id = 'AVIOR-27'"

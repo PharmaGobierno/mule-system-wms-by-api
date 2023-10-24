@@ -5,20 +5,20 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="orchestrator-get-providersarray" doc:id="ffcb17e8-5af7-46d9-9317-b517f6446b1d" >
-		<ee:transform doc:name="Transform Message" doc:id="982dc974-808b-4fc3-a6c7-6b0adb587565">
+		<ee:transform doc:name="Set Query" doc:id="982dc974-808b-4fc3-a6c7-6b0adb587565">
 			<ee:message>
 			</ee:message>
 			<ee:variables>
 				<ee:set-variable variableName="query"><![CDATA[%dw 2.0
 output application/json
-var DBAQA = p('database.wms.blueyonder.schema')
+var schema = p('database.wms.blueyonder.schema')
 ---
 "SELECT
     supm.supnum,
     adrm.ADRNAM
 FROM
-    DBAQA.supmst supm,
-    DBAQA.adrmst adrm
+    "++ schema ++".supmst supm,
+    "++ schema ++".adrmst adrm
 WHERE
     adrm.adr_id = supm.adr_id
     AND adrtyp = 'SUP' 

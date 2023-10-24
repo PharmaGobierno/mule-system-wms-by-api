@@ -13,29 +13,29 @@ output application/json
 payload.code]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<ee:transform doc:name="set Query" doc:id="881e8234-6c2e-44f0-b055-fead9264b133" >
+		<ee:transform doc:name="Set Query" doc:id="881e8234-6c2e-44f0-b055-fead9264b133" >
 			<ee:message >
 			</ee:message>
 			<ee:variables >
 				<ee:set-variable variableName="getLpnFull" ><![CDATA[%dw 2.0
 output application/java
-var DBAQA = p('database.wms.blueyonder.schema')
+var schema = p('database.wms.blueyonder.schema')
 ---
 "select *
 from
 (select /*distinct ordnum*/ listagg (distinct ordnum,',') as ordnum
-  from DBAQA.inventory_pckwrk_view ipv3
+  from "++ schema ++".inventory_pckwrk_view ipv3
  where lodnum = :lodnum
    and ipv3.subnum like 'CTN%') delivery,
 (select count(distinct pv2.ctnnum) as "delvSurtidosEnPalet"
-from DBAQA.pckwrk_view pv1
-join DBAQA.pckwrk_view pv2
+from "++ schema ++".pckwrk_view pv1
+join "++ schema ++".pckwrk_view pv2
 on pv1.schbat = pv2.schbat
         and pv1.ordnum = pv2.ordnum
         and pv1.ordlin = pv2.ordlin
         and pv1.ordsln = pv2.ordsln
         and pv1.subnum = pv2.ctnnum
-join DBAQA.inventory_view iv
+join "++ schema ++".inventory_view iv
 on pv2.wrkref = iv.wrkref
         and pv2.wrkref_dtl = iv.wrkref_dtl
         and pv2.ship_line_id = iv.ship_line_id
@@ -43,25 +43,25 @@ on pv2.wrkref = iv.wrkref
         and pv2.wh_id = iv.wh_id
         and pv2.prt_client_id = iv.prt_client_id
         and pv2.prtnum = iv.prtnum
-JOIN DBAQA.locmst lm
+JOIN "++ schema ++".locmst lm
 on iv.wh_id = lm.wh_id
         and iv.stoloc = lm.stoloc
 where pv1.ordnum in (select distinct ordnum
-                      from DBAQA.inventory_pckwrk_view ipv3
+                      from "++ schema ++".inventory_pckwrk_view ipv3
                      where lodnum = :lodnum
                        and ipv3.subnum like 'CTN%')
         and pv1.wrktyp = 'K'
         and pv1.appqty = 1
         and lm.mov_zone_id in ('10093', '10036')) inPal,
 (select count(distinct pv2.ctnnum) as "delvSurtidos"
-from DBAQA.pckwrk_view pv1
-join DBAQA.pckwrk_view pv2
+from "++ schema ++".pckwrk_view pv1
+join "++ schema ++".pckwrk_view pv2
 on pv1.schbat = pv2.schbat
         and pv1.ordnum = pv2.ordnum
         and pv1.ordlin = pv2.ordlin
         and pv1.ordsln = pv2.ordsln
         and pv1.subnum = pv2.ctnnum
-join DBAQA.inventory_view iv
+join "++ schema ++".inventory_view iv
 on pv2.wrkref = iv.wrkref
         and pv2.wrkref_dtl = iv.wrkref_dtl
         and pv2.ship_line_id = iv.ship_line_id
@@ -69,33 +69,33 @@ on pv2.wrkref = iv.wrkref
         and pv2.wh_id = iv.wh_id
         and pv2.prt_client_id = iv.prt_client_id
         and pv2.prtnum = iv.prtnum
-JOIN DBAQA.locmst lm
+JOIN "++ schema ++".locmst lm
 on iv.wh_id = lm.wh_id
         and iv.stoloc = lm.stoloc
 where pv1.ordnum in (select distinct ordnum
-                      from DBAQA.inventory_pckwrk_view ipv3
+                      from "++ schema ++".inventory_pckwrk_view ipv3
                      where lodnum = :lodnum
                        and ipv3.subnum like 'CTN%')
         and pv1.wrktyp = 'K'
         and pv1.appqty = 1
         and lm.mov_zone_id not in ('10093', '10036')) inPal2,
 (select count(*) "delvSinSurtir"
-   from DBAQA.pckwrk_view
+   from "++ schema ++".pckwrk_view
   where ordnum in (select distinct ordnum
-                    from DBAQA.inventory_pckwrk_view ipv3
+                    from "++ schema ++".inventory_pckwrk_view ipv3
                    where lodnum = :lodnum
                      and ipv3.subnum like 'CTN%')
     and wrktyp = 'K'
     and appqty = 0) "Mis",
 (select count(distinct pv2.ctnnum) "lpnSurtidosEnPalet"
-   from DBAQA.pckwrk_view pv1
-   join DBAQA.pckwrk_view pv2
+   from "++ schema ++".pckwrk_view pv1
+   join "++ schema ++".pckwrk_view pv2
      on pv1.schbat = pv2.schbat
     and pv1.ordnum = pv2.ordnum
     and pv1.ordlin = pv2.ordlin
     and pv1.ordsln = pv2.ordsln
     and pv1.subnum = pv2.ctnnum
-   join DBAQA.inventory_view iv
+   join "++ schema ++".inventory_view iv
      on pv2.wrkref = iv.wrkref
     and pv2.wrkref_dtl = iv.wrkref_dtl
     and pv2.ship_line_id = iv.ship_line_id
@@ -103,7 +103,7 @@ where pv1.ordnum in (select distinct ordnum
     and pv2.wh_id = iv.wh_id
     and pv2.prt_client_id = iv.prt_client_id
     and pv2.prtnum = iv.prtnum
-   JOIN DBAQA.locmst lm
+   JOIN "++ schema ++".locmst lm
      on iv.wh_id = lm.wh_id
     and iv.stoloc = lm.stoloc
   where IV.lodnum = :lodnum
@@ -111,22 +111,22 @@ where pv1.ordnum in (select distinct ordnum
     and pv1.appqty = 1
     and lm.mov_zone_id in ('10093','10036')) a,
 (select count(*) "lpnSinSurtir"
-   from DBAQA.pckwrk_view pv
-   join DBAQA.inventory_pckwrk_view ipv
+   from "++ schema ++".pckwrk_view pv
+   join "++ schema ++".inventory_pckwrk_view ipv
      on pv.ordnum = ipv.ordnum
     and ipv.lodnum != pv.lodnum
   where pv.wrktyp = 'K'
     and pv.appqty = 0
     and ipv.lodnum = :lodnum) b,
 (select count(distinct ipv2.ctnnum) "lpnSurtidos"
-   from DBAQA.inventory_pckwrk_view ipv2
-   join DBAQA.locmst
+   from "++ schema ++".inventory_pckwrk_view ipv2
+   join "++ schema ++".locmst
      on ipv2.stoloc = locmst.stoloc
     and ipv2.wh_id = locmst.wh_id
     and locmst.mov_zone_id not in ('10093', '10036')
         /*and ipv.lodnum != ipv2.lodnum*/
   where ipv2.ordnum in (select distinct ordnum
-                          from DBAQA.inventory_pckwrk_view ipv3
+                          from "++ schema ++".inventory_pckwrk_view ipv3
                          where lodnum = :lodnum)
     and ipv2.subnum like 'CTN%')"]]></ee:set-variable>
 			</ee:variables>
@@ -174,24 +174,24 @@ output application/json
 if(payload.type_box == 'delivery') vars.surtidosResponse[0].LPN else payload.code]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<ee:transform doc:name="set Query" doc:id="0bc97b17-df2c-4782-8cca-7e3b3ddb8a68" >
+		<ee:transform doc:name="Set Query" doc:id="0bc97b17-df2c-4782-8cca-7e3b3ddb8a68" >
 			<ee:message >
 			</ee:message>
 			<ee:variables >
 				<ee:set-variable variableName="getLpn" ><![CDATA[%dw 2.0
 output application/java
-var DBAQA = p('database.wms.blueyonder.schema')
+var schema = p('database.wms.blueyonder.schema')
 ---
 "select * from
 (select count(distinct pv2.ctnnum) " SurtidosEnPalet"
-   from DBAQA.pckwrk_view pv1
-   join DBAQA.pckwrk_view pv2
+   from "++ schema ++".pckwrk_view pv1
+   join "++ schema ++".pckwrk_view pv2
      on pv1.schbat = pv2.schbat
     and pv1.ordnum = pv2.ordnum
     and pv1.ordlin = pv2.ordlin
     and pv1.ordsln = pv2.ordsln
     and pv1.subnum = pv2.ctnnum
-   join DBAQA.inventory_view iv
+   join "++ schema ++".inventory_view iv
      on pv2.wrkref = iv.wrkref
     and pv2.wrkref_dtl = iv.wrkref_dtl
     and pv2.ship_line_id = iv.ship_line_id
@@ -199,7 +199,7 @@ var DBAQA = p('database.wms.blueyonder.schema')
     and pv2.wh_id = iv.wh_id
     and pv2.prt_client_id = iv.prt_client_id
     and pv2.prtnum = iv.prtnum
-   JOIN DBAQA.locmst lm
+   JOIN "++ schema ++".locmst lm
      on iv.wh_id = lm.wh_id
     and iv.stoloc = lm.stoloc
   where IV.lodnum = :lodnum
@@ -207,22 +207,22 @@ var DBAQA = p('database.wms.blueyonder.schema')
     and pv1.appqty = 1
     and lm.mov_zone_id in ('10093','10036')) a,
 (select count(*) SinSurtir
-   from DBAQA.pckwrk_view pv
-   join DBAQA.inventory_pckwrk_view ipv
+   from "++ schema ++".pckwrk_view pv
+   join "++ schema ++".inventory_pckwrk_view ipv
      on pv.ordnum = ipv.ordnum
     and ipv.lodnum != pv.lodnum
   where pv.wrktyp = 'K'
     and pv.appqty = 0
     and ipv.lodnum = :lodnum) b,
 (select count(distinct ipv2.ctnnum) Surtidos
-   from DBAQA.inventory_pckwrk_view ipv2
-   join DBAQA.locmst
+   from "++ schema ++".inventory_pckwrk_view ipv2
+   join "++ schema ++".locmst
      on ipv2.stoloc = locmst.stoloc
     and ipv2.wh_id = locmst.wh_id
     and locmst.mov_zone_id not in ('10093', '10036')
         /*and ipv.lodnum != ipv2.lodnum*/
   where ipv2.ordnum in (select distinct ordnum
-                          from DBAQA.inventory_pckwrk_view ipv3
+                          from "++ schema ++".inventory_pckwrk_view ipv3
                          where lodnum = :lodnum)
     and ipv2.subnum like 'CTN%') c"]]></ee:set-variable>
 			</ee:variables>
@@ -247,13 +247,13 @@ payload.code
 ]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<ee:transform doc:name="set Query" doc:id="6d45dc0e-f3ac-4bd9-9a90-e22b3a0820dd" >
+		<ee:transform doc:name="Set Query" doc:id="6d45dc0e-f3ac-4bd9-9a90-e22b3a0820dd" >
 			<ee:message >
 			</ee:message>
 			<ee:variables >
 				<ee:set-variable variableName="getBox" ><![CDATA[%dw 2.0
 output application/java
-var DBAQA = p('database.wms.blueyonder.schema')
+var schema = p('database.wms.blueyonder.schema')
 ---
 "select
 	*
@@ -263,15 +263,15 @@ from
 		count(distinct pv2.ctnnum) as "SurtidosEnPalet",
 		max(iv.lodnum) LPN
 	from
-		DBAQA.pckwrk_view pv1
-	join DBAQA.pckwrk_view pv2
+		"++ schema ++".pckwrk_view pv1
+	join "++ schema ++".pckwrk_view pv2
 on
 		pv1.schbat = pv2.schbat
 		and pv1.ordnum = pv2.ordnum
 		and pv1.ordlin = pv2.ordlin
 		and pv1.ordsln = pv2.ordsln
 		and pv1.subnum = pv2.ctnnum
-	join DBAQA.inventory_view iv
+	join "++ schema ++".inventory_view iv
 on
 		pv2.wrkref = iv.wrkref
 		and pv2.wrkref_dtl = iv.wrkref_dtl
@@ -280,7 +280,7 @@ on
 		and pv2.wh_id = iv.wh_id
 		and pv2.prt_client_id = iv.prt_client_id
 		and pv2.prtnum = iv.prtnum
-	JOIN DBAQA.locmst lm
+	JOIN "++ schema ++".locmst lm
 on
 		iv.wh_id = lm.wh_id
 		and iv.stoloc = lm.stoloc
@@ -293,15 +293,15 @@ on
 	select
 		count(distinct pv2.ctnnum) as "Surtidos"
 	from
-		DBAQA.pckwrk_view pv1
-	join DBAQA.pckwrk_view pv2
+		"++ schema ++".pckwrk_view pv1
+	join "++ schema ++".pckwrk_view pv2
 on
 		pv1.schbat = pv2.schbat
 		and pv1.ordnum = pv2.ordnum
 		and pv1.ordlin = pv2.ordlin
 		and pv1.ordsln = pv2.ordsln
 		and pv1.subnum = pv2.ctnnum
-	join DBAQA.inventory_view iv
+	join "++ schema ++".inventory_view iv
 on
 		pv2.wrkref = iv.wrkref
 		and pv2.wrkref_dtl = iv.wrkref_dtl
@@ -310,7 +310,7 @@ on
 		and pv2.wh_id = iv.wh_id
 		and pv2.prt_client_id = iv.prt_client_id
 		and pv2.prtnum = iv.prtnum
-	JOIN DBAQA.locmst lm
+	JOIN "++ schema ++".locmst lm
 on
 		iv.wh_id = lm.wh_id
 		and iv.stoloc = lm.stoloc
@@ -323,7 +323,7 @@ on
 	select
 		count(*) "SinSurtir"
 	from
-		DBAQA.pckwrk_view
+		"++ schema ++".pckwrk_view
 	where
 		ordnum = :ordnum
 		and wrktyp = 'K'
