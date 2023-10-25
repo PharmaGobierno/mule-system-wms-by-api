@@ -77,9 +77,7 @@ inventario AS
 	LEFT JOIN "++ schema ++".rcvtrk rctk ON rcvlin.trknum = rctk.trknum
 	LEFT JOIN "++ schema ++".trlr trl ON rctk.trlr_id = trl.trlr_id
 	JOIN "++ schema ++".locmst ON iv.stoloc = locmst.stoloc
-	WHERE
-		iv.prtnum IN (" ++ payload ++ ")
-		AND iv.invsts = ( 'DISP' )
+	WHERE iv.invsts = ( 'DISP' )
 		AND ( trl.trlr_stat = 'D' OR trl.trlr_stat IS NULL )
 		AND iv.ship_line_id IS NULL
 		AND locmst.arecod NOT IN
@@ -132,9 +130,9 @@ ords AS
 pcks AS
 (
 	SELECT
-		SUM(pwv.pckqty - pwv.appqty) pckqty,
-		pwv.untcas,
-		pwv.prtnum
+		pwv.prtnum,
+		pwv.ftpcod,
+		SUM(pwv.pckqty - pwv.appqty) pckqty
 	FROM
 		"++ schema ++".pckwrk_view pwv
 	WHERE pwv.appqty < pwv.pckqty
@@ -146,48 +144,43 @@ pcks AS
 			FROM area_excl
 		)
 	GROUP BY
-		untcas,
-		prtnum
+		prtnum,
+		ftpcod
 ),
-prorrateo AS
+prorrateo_pck AS
 (
 	SELECT
-		NVL
-		(
-			SUM(inventario.cantidad)
-			OVER
-			(
-				PARTITION BY inventario.clave
-				ORDER BY inventario.expira, inventario.lote DESC
-				ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-			),
-			0
-		) AS sumov,
+		inventario.wh_id,
+		inventario.clave,
+		inventario.untcas,
+		inventario.paqueteo,
+		inventario.cantpzpck,
+		inventario.lote,
+		inventario.expira,
 		inventario.ftpcod,
-		ords.cant_comp,
-		NVL(ords.cant_comp, 0) + NVL(pcks.pckqty, 0) sum_comp,
-		inventario.cantidad,
+		NVL(pcks.pckqty, 0) comp_pck,
+		inventario.cantidad cant_inventario,
 		CASE
 			WHEN
 				--la suma del inventario del registro actual aún es menor o igual al total de la reserva
 				SUM(inventario.cantidad) OVER
 				(
-					PARTITION BY inventario.clave
+					PARTITION BY inventario.clave, inventario.ftpcod
 					ORDER BY inventario.expira, inventario.lote DESC
 					ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-				) <= NVL(ords.cant_comp, 0) + NVL(pcks.pckqty, 0)
+				) <= NVL(pcks.pckqty, 0)
 			THEN inventario.cantidad --colocar la cantidad del inventario
 			ELSE
 				--asignar el valor máximo
 				GREATEST
 				(
 					--lo que faltaba por asignar en el registro anterior
-					NVL(ords.cant_comp, 0) + NVL(pcks.pckqty, 0) -
+					NVL(pcks.pckqty, 0) -
 					NVL
 					(
 						SUM(inventario.cantidad) OVER
 						(
-							PARTITION BY inventario.clave
+							PARTITION BY inventario.clave, inventario.ftpcod
 							ORDER BY inventario.expira, inventario.lote DESC
 							ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
 						),
@@ -195,17 +188,76 @@ prorrateo AS
 					),
 					0 --0 si la resta es negativa
 				)
-		END stock_asignado,
-		inventario.wh_id,
-		inventario.clave,
-		inventario.untcas,
-		inventario.paqueteo,
-		inventario.cantpzpck,
-		inventario.expira
+		END stock_asignado_pck
 	FROM
 		inventario
-		LEFT JOIN ords ON ords.prtnum = inventario.clave
-		LEFT JOIN pcks ON pcks.prtnum = inventario.clave AND pcks.untcas = inventario.untcas
+		LEFT JOIN pcks ON pcks.prtnum = inventario.clave AND pcks.ftpcod = inventario.ftpcod
+),
+prorrateo_ord AS
+(
+	SELECT
+		pp.wh_id,
+		pp.clave,
+		pp.untcas,
+		pp.paqueteo,
+		pp.cantpzpck,
+		pp.expira,
+		pp.ftpcod,
+		pp.comp_pck,
+		pp.cant_inventario,
+		pp.stock_asignado_pck,
+		NVL(ords.cant_comp, 0) comp_ord,
+		pp.cant_inventario - pp.stock_asignado_pck disponible_ord,
+		CASE
+			WHEN
+				--la suma del inventario del registro actual aún es menor o igual al total de la reserva
+				SUM(pp.cant_inventario - pp.stock_asignado_pck) OVER
+				(
+					PARTITION BY pp.clave
+					ORDER BY pp.expira, pp.lote DESC
+					ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+				) <= NVL(ords.cant_comp, 0)
+			THEN pp.cant_inventario - pp.stock_asignado_pck --colocar la cantidad del inventario
+			ELSE
+				--asignar el valor máximo
+				GREATEST
+				(
+					--lo que faltaba por asignar en el registro anterior
+					NVL(ords.cant_comp, 0) -
+					NVL
+					(
+						SUM(pp.cant_inventario - pp.stock_asignado_pck) OVER
+						(
+							PARTITION BY pp.clave
+							ORDER BY pp.expira, pp.lote DESC
+							ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+						),
+						0
+					),
+					0 --0 si la resta es negativa
+				)
+		END stock_asignado_ord
+	FROM prorrateo_pck pp
+		LEFT JOIN ords ON pp.clave = ords.prtnum
+),
+validacion AS
+(
+	SELECT
+		wh_id,
+		clave,
+		untcas,
+		paqueteo,
+		cantpzpck,
+		expira,
+		ftpcod,
+		comp_pck,
+		comp_ord,
+		cant_inventario,
+		stock_asignado_pck,
+		disponible_ord,
+		stock_asignado_ord,
+		disponible_ord - stock_asignado_ord disponible_final
+	FROM prorrateo_ord
 )
 SELECT
 	clave,
@@ -214,20 +266,21 @@ SELECT
 	untcas,
 	paqueteo,
 	cantpzpck,
-	SUM(cantidad) cant_inv,
-	SUM(cantidad - stock_asignado) stock_disp,
-	ROUND(SUM(cantidad - stock_asignado) / cantpzpck) packdisp,
-	sum_comp comprometido
+	SUM(cant_inventario) cant_inv,
+	SUM(disponible_final) stock_disp,
+	ROUND(SUM(disponible_final) / cantpzpck) packdisp,
+	stock_asignado_pck + stock_asignado_ord comprometido
 FROM
-	prorrateo
+	validacion
+WHERE clave IN ( '0606810042', '0605320167', '5002750001', '5003320001' )
 GROUP BY
 	ftpcod,
 	clave,
 	untcas,
 	paqueteo,
 	cantpzpck,
-	sum_comp,
-	cant_comp"]]></ee:set-variable>
+	stock_asignado_pck,
+	stock_asignado_ord"]]></ee:set-variable>
             </ee:variables>
         </ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-availability" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-availability" />
