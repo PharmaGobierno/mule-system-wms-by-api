@@ -27,7 +27,7 @@ from
   from "++ schema ++".inventory_pckwrk_view ipv3
  where lodnum = :lodnum
    and ipv3.subnum like 'CTN%') delivery,
-(select count(distinct pv2.ctnnum) as "delvSurtidosEnPalet"
+(select count(distinct pv2.ctnnum) as 'delvSurtidosEnPalet'
 from "++ schema ++".pckwrk_view pv1
 join "++ schema ++".pckwrk_view pv2
 on pv1.schbat = pv2.schbat
@@ -53,7 +53,7 @@ where pv1.ordnum in (select distinct ordnum
         and pv1.wrktyp = 'K'
         and pv1.appqty = 1
         and lm.mov_zone_id in ('10093', '10036')) inPal,
-(select count(distinct pv2.ctnnum) as "delvSurtidos"
+(select count(distinct pv2.ctnnum) as 'delvSurtidos'
 from "++ schema ++".pckwrk_view pv1
 join "++ schema ++".pckwrk_view pv2
 on pv1.schbat = pv2.schbat
@@ -79,15 +79,15 @@ where pv1.ordnum in (select distinct ordnum
         and pv1.wrktyp = 'K'
         and pv1.appqty = 1
         and lm.mov_zone_id not in ('10093', '10036')) inPal2,
-(select count(*) "delvSinSurtir"
+(select count(*) 'delvSinSurtir'
    from "++ schema ++".pckwrk_view
   where ordnum in (select distinct ordnum
                     from "++ schema ++".inventory_pckwrk_view ipv3
                    where lodnum = :lodnum
                      and ipv3.subnum like 'CTN%')
     and wrktyp = 'K'
-    and appqty = 0) "Mis",
-(select count(distinct pv2.ctnnum) "lpnSurtidosEnPalet"
+    and appqty = 0) 'Mis',
+(select count(distinct pv2.ctnnum) 'lpnSurtidosEnPalet'
    from "++ schema ++".pckwrk_view pv1
    join "++ schema ++".pckwrk_view pv2
      on pv1.schbat = pv2.schbat
@@ -110,7 +110,7 @@ where pv1.ordnum in (select distinct ordnum
     and pv1.wrktyp = 'K'
     and pv1.appqty = 1
     and lm.mov_zone_id in ('10093','10036')) a,
-(select count(*) "lpnSinSurtir"
+(select count(*) 'lpnSinSurtir'
    from "++ schema ++".pckwrk_view pv
    join "++ schema ++".inventory_pckwrk_view ipv
      on pv.ordnum = ipv.ordnum
@@ -118,7 +118,7 @@ where pv1.ordnum in (select distinct ordnum
   where pv.wrktyp = 'K'
     and pv.appqty = 0
     and ipv.lodnum = :lodnum) b,
-(select count(distinct ipv2.ctnnum) "lpnSurtidos"
+(select count(distinct ipv2.ctnnum) 'lpnSurtidos'
    from "++ schema ++".inventory_pckwrk_view ipv2
    join "++ schema ++".locmst
      on ipv2.stoloc = locmst.stoloc

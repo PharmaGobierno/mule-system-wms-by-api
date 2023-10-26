@@ -269,18 +269,17 @@ SELECT
 	SUM(cant_inventario) cant_inv,
 	SUM(disponible_final) stock_disp,
 	ROUND(SUM(disponible_final) / cantpzpck) packdisp,
-	stock_asignado_pck + stock_asignado_ord comprometido
+	SUM(stock_asignado_pck + stock_asignado_ord) comprometido
 FROM
 	validacion
-WHERE clave IN ( '0606810042', '0605320167', '5002750001', '5003320001' )
+WHERE clave IN (" ++ payload ++ ")
 GROUP BY
 	ftpcod,
 	clave,
 	untcas,
 	paqueteo,
-	cantpzpck,
-	stock_asignado_pck,
-	stock_asignado_ord"]]></ee:set-variable>
+	cantpzpck
+"]]></ee:set-variable>
             </ee:variables>
         </ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-availability" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-availability" />
