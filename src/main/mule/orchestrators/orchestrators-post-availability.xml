@@ -106,8 +106,8 @@ inventario AS
 ords AS
 (
 	SELECT
-		SUM(ord_line.ordqty) cant_comp,
-		ord_line.prtnum
+		ord_line.prtnum,
+		SUM(ord_line.ordqty) cant_comp
 	FROM "++ schema ++".ord_line
 	JOIN "++ schema ++".shipment_line
 		ON shipment_line.prtnum = ord_line.prtnum
@@ -118,11 +118,14 @@ ords AS
 		AND shipment_line.ordsln = ord_line.ordsln
 		AND shipment_line.linsts != 'B'
 	WHERE
-		ord_line.ordnum NOT IN
+		NOT EXISTS
 		(
-			SELECT DISTINCT pckwrk_view.ordnum
-			FROM "++ schema ++".pckwrk_view
-			WHERE wrktyp NOT IN ( 'M', 'T', 'G', 'E', 'R', 'D', 'S' )
+			SELECT null
+			FROM "++ schema ++".pckwrk_hdr
+				INNER JOIN "++ schema ++".pckwrk_dtl
+				ON pckwrk_dtl.wrkref = pckwrk_hdr.wrkref
+			WHERE pckwrk_hdr.wrktyp NOT IN ( 'M', 'T', 'G', 'E', 'R', 'D', 'S' )
+				AND pckwrk_dtl.ordnum = ord_line.ordnum
 		)
 	GROUP BY
 		ord_line.prtnum
@@ -130,22 +133,23 @@ ords AS
 pcks AS
 (
 	SELECT
-		pwv.prtnum,
-		pwv.ftpcod,
-		SUM(pwv.pckqty - pwv.appqty) pckqty
-	FROM
-		"++ schema ++".pckwrk_view pwv
-	WHERE pwv.appqty < pwv.pckqty
-		AND pwv.wrktyp = 'P'
-		AND pwv.invsts = 'DISP'
-		AND pwv.srcare NOT IN
+		pckwrk_hdr.prtnum,
+		pckwrk_hdr.ftpcod,
+		SUM(pckwrk_hdr.pckqty - pckwrk_dtl.appqty) pckqty
+	FROM "++ schema ++".pckwrk_hdr
+		INNER JOIN "++ schema ++".pckwrk_dtl
+		ON pckwrk_dtl.wrkref = pckwrk_hdr.wrkref
+	WHERE pckwrk_dtl.appqty < pckwrk_hdr.pckqty
+		AND pckwrk_hdr.wrktyp = 'P'
+		AND pckwrk_hdr.invsts = 'DISP'
+		AND pckwrk_hdr.srcare NOT IN
 		(
 			SELECT *
 			FROM area_excl
 		)
 	GROUP BY
-		prtnum,
-		ftpcod
+		pckwrk_hdr.prtnum,
+		pckwrk_hdr.ftpcod
 ),
 prorrateo_pck AS
 (
