@@ -207,62 +207,43 @@ output application/json
 var schema = p('database.wms.blueyonder.schema')
 ---
 "SELECT
-	DISTINCT shipment_line.ordnum ordnum,
-	shipment.ship_id ship_id,
-	(nvl((
-	SELECT
-		COUNT(DISTINCT all_inv_v1.subnum) cajas_carton
-	FROM
-		"++ schema ++".shipment shipment_1
-	JOIN "++ schema ++".shipment_line shipment_lin1 ON
-		shipment_lin1.ship_id = shipment_1.ship_id
-	LEFT JOIN "++ schema ++".all_inventory_view all_inv_v1 ON
-		all_inv_v1.ship_line_id = shipment_lin1.ship_line_id
-		AND all_inv_v1.wh_id = shipment_lin1.wh_id
-		AND all_inv_v1.wh_id = shipment_1.wh_id
-	WHERE
-		shipment_1.ship_id = shipment.ship_id
-		AND all_inv_v1.wh_id = shipment.wh_id
-		AND all_inv_v1.phyflg = 1),
-	0) + 
-            nvl((
-	SELECT
-		SUM(sumas.suma) cajas_listas
-	FROM
-		(
-		SELECT
-			ceil((
-			SELECT
-				SUM(lod1.untqty / lod1.untcas)
-			FROM
-				"++ schema ++".all_inventory_view lod1
-			WHERE
-				lod1.subnum = all_inv_v2.subnum )) AS suma
-		FROM
-			"++ schema ++".shipment_line shipment_line2
-		JOIN "++ schema ++".shipment shipment_2 ON
-			shipment_2.ship_id = shipment_line2.ship_id
-			AND shipment_2.wh_id = shipment_line2.wh_id
-		LEFT JOIN "++ schema ++".all_inventory_view all_inv_v2 ON
-			all_inv_v2.ship_line_id = shipment_line2.ship_line_id
-			AND all_inv_v2.wh_id = shipment_line2.wh_id
-			AND all_inv_v2.prtnum = shipment_line2.prtnum
-			AND all_inv_v2.prt_client_id = shipment_line2.prt_client_id
-		WHERE
-			shipment_2.ship_id = shipment.ship_id
-			AND shipment_2.wh_id = shipment.wh_id
-			AND(all_inv_v2.phyflg = 0)
-		GROUP BY
-			all_inv_v2.subnum) sumas),
-	0) ) bultos_por_orden
+  DISTINCT shipment_line.ordnum  ordnum,
+  shipment.ship_id ship_id,
+    (nvl((
+        SELECT
+            COUNT(DISTINCT all_inv_v1.subnum) cajas_carton
+        FROM
+                 "++ schema ++".shipment shipment_1
+            JOIN "++ schema ++".shipment_line      shipment_lin1 ON shipment_lin1.ship_id = shipment_1.ship_id
+            LEFT JOIN "++ schema ++".all_inventory_view all_inv_v1 ON all_inv_v1.ship_line_id = shipment_lin1.ship_line_id
+                                                       AND all_inv_v1.wh_id = shipment_lin1.wh_id
+                                                       AND all_inv_v1.wh_id = shipment_1.wh_id
+        WHERE
+                shipment_1.ship_id = shipment.ship_id
+            AND all_inv_v1.wh_id = shipment.wh_id
+            AND all_inv_v1.phyflg = 1),0) + 
+            nvl(( SELECT
+            SUM(sumas.suma) cajas_listas
+        FROM (SELECT ceil((SELECT SUM(lod1.untqty / lod1.untcas)
+                        FROM "++ schema ++".all_inventory_view lod1
+                        WHERE lod1.subnum = all_inv_v2.subnum  )) AS suma
+                FROM
+                         "++ schema ++".shipment_line shipment_line2
+                    JOIN "++ schema ++".shipment           shipment_2 ON shipment_2.ship_id = shipment_line2.ship_id
+                                                AND shipment_2.wh_id = shipment_line2.wh_id
+                    LEFT JOIN "++ schema ++".all_inventory_view all_inv_v2 ON all_inv_v2.ship_line_id = shipment_line2.ship_line_id
+                                                               AND all_inv_v2.wh_id = shipment_line2.wh_id
+                                                               AND all_inv_v2.prtnum = shipment_line2.prtnum
+                                                               AND all_inv_v2.prt_client_id = shipment_line2.prt_client_id
+                WHERE shipment_2.ship_id = shipment.ship_id
+                    AND shipment_2.wh_id = shipment.wh_id
+                    AND(all_inv_v2.phyflg = 0)
+                GROUP BY  all_inv_v2.subnum) sumas),0) ) bultos_por_orden
 FROM
-	"++ schema ++".shipment
-JOIN "++ schema ++".shipment_line ON
-	shipment.ship_id = shipment_line.ship_id
-WHERE
-	1 = 1
-	AND shipment.ship_id in (" ++ payload ++ ")
-	AND shipment.wh_id = 'AVIOR-27'"]]></ee:set-variable>
+    "++ schema ++".shipment JOIN "++ schema ++".shipment_line ON  shipment.ship_id= shipment_line.ship_id
+WHERE 1=1
+   AND shipment_line.ordnum IN (" ++ payload ++ ")
+   AND shipment.wh_id = 'AVIOR-27'"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-box-quantity" doc:id="05a24bf2-b1ce-4b54-8299-777bfdc73840" name="client-db-wms-get-box-quantity" />
