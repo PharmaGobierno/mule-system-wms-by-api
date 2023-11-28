@@ -3,7 +3,7 @@
     <http:listener-config name="system-wms-by-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS" tlsContext="TLS_Context" />
     </http:listener-config>
-    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.22:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.33:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="system-wms-by-api-main">
         <http:listener config-ref="system-wms-by-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -208,15 +208,67 @@ attributes.uriParams.'provider_id']]></ee:set-variable>
     </flow>
     <flow name="get:\wms\provider:system-wms-by-api-config">
         <ee:transform doc:name="Transform Message">
-            <ee:message>
-            </ee:message>
-			<ee:variables >
-				<ee:set-variable variableName="providers_id" ><![CDATA[%dw 2.0
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="providers_id"><![CDATA[%dw 2.0
 output application/json
 ---
 (attributes.queryParams.providers_id default "") replace "," with ("','")]]></ee:set-variable>
-			</ee:variables>
+            </ee:variables>
         </ee:transform>
-		<flow-ref doc:name="orchestrator-get-provider" doc:id="6f79b76e-80b1-4d9c-9752-5441d71798c8" name="orchestrator-get-providersarray"/>
+        <flow-ref doc:name="orchestrator-get-provider" doc:id="6f79b76e-80b1-4d9c-9752-5441d71798c8" name="orchestrator-get-providersarray" />
+    </flow>
+    <flow name="get:\wms\inventory:system-wms-by-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[
+  {
+    dtl_num: "D00000005EAH",
+    trlr_stat: "",
+    fecha_inventario: "26/Sep/2023",
+    clave: "010000002200",
+    descripcion: "CASEINATO DE CALCIO. POLVO.",
+    cantidad: "462",
+    tipo_clave: "DPN",
+    tipo_insumo: "Medicamento AG",
+    sub_direccion: "",
+    almacen: "CENADI",
+    sub_almacen: "Almacén General",
+    sub_inventario: "Almacén general",
+    rack: "L",
+    posicion: "14",
+    nivel: "00",
+    lote: "L304019",
+    fecha_expiracion: "18/Jul/2025",
+    costo_promedio: "\$65.85",
+    importe: "\$30,422.70",
+    importe_sin_iva: "\$25,555.07",
+    iva: "\$25,555.07",
+    lpn: "1000936362",
+    proveedor: "NUCITEC SA DE CV",
+    contrato: "",
+    partida_presupuestal: "253010000",
+    ingreso_canje_baja: "",
+    origen_dlytrn: "Disponible",
+    motivo_dlytrn: "Disponible",
+    cant_comp: "0",
+    cant_total: "462",
+    secuencia_reserva: "1",
+    stock_reservado: "0",
+    stock_disponible: "462",
+    ubicacion: "L.14.00",
+    registro_unico: "",
+    en_conteo: "",
+    dias_surtimiento: "60",
+    vida_util: "602",
+    tipo_recepcion: "",
+    fecha_recepcion: ""
+  }
+] as Array {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
     </flow>
 </mule>
