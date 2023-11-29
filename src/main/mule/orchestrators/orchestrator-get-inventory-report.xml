@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrator-get-inventory-report" doc:id="3b1e4df0-613f-4521-83f9-8848a3e43e4e" >
+		<ee:transform doc:name="Set Query" doc:id="463238de-d4e1-4c36-afe7-6a346c808e6f">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="queryInventory" ><![CDATA[%dw 2.0
+output application/java
+
+var schema = p('database.wms.blueyonder.schema')
+
+---
+"WITH aux_reservas AS (SELECT invloc.prtnum,
+                              invloc.stoloc,
+                              SUM(invloc.comqty) comqty
+                         FROM "++ schema ++".invloc
+                        WHERE invloc.lotnum = '----'
+                          AND invloc.prtnum != 'KITPART'
+                          AND invloc.comqty != 0
+                        GROUP BY invloc.prtnum,
+                              invloc.stoloc),
+        aux_poldat AS (SELECT distinct (1 - to_number(rtnum2*.01)) sin_iva
+                         FROM "++ schema ++". poldat
+                        WHERE polcod = 'VAR-TRAXION'
+                          AND polvar = 'COSTO_PROMEDIO'
+                          AND polval = 'IVA'),
+        aux_rcvlin AS (SELECT rcvlin.prtnum,
+                              rcvlin.expire_dte,
+                              rcvlin.lotnum,
+                              rcvlin.wh_id,
+                              adrmst.adrnam,
+                              rcvinv.sadnum,
+                              rcvinv.supnum,
+                              dscmst_invtyp.lngdsc tipo_recepcion,
+                              rcvlin.init_rcv_dte,
+                              ROW_NUMBER() OVER(PARTITION BY rcvlin.prtnum, rcvlin.expire_dte, rcvlin.lotnum, rcvlin.wh_id
+                                                 ORDER BY rcvlin.init_rcv_dte
+                                                       --!!!
+) rn
+                         FROM  "++ schema ++".rcvlin
+                        INNER
+                         JOIN  "++ schema ++".rcvinv
+                           ON rcvlin.trknum = rcvinv.trknum
+                          AND rcvlin.supnum = rcvinv.supnum
+                          AND rcvlin.invnum = rcvinv.invnum
+                          AND rcvlin.wh_id = rcvinv.wh_id
+                          AND rcvlin.client_id = rcvinv.client_id
+                        INNER
+                         JOIN  "++ schema ++".supmst
+                           ON rcvlin.supnum = supmst.supnum
+                        INNER
+                         JOIN  "++ schema ++".adrmst
+                           ON adrmst.adr_id = supmst.adr_id
+                          AND rcvlin.seqnum = 1
+                         LEFT
+                         JOIN  "++ schema ++".dscmst dscmst_invtyp
+                           ON rcvinv.invtyp = dscmst_invtyp.colval
+                          AND dscmst_invtyp.colnam = 'invtyp'
+                          AND dscmst_invtyp.locale_id = 'ES-ES'),
+        aux_reacod AS (SELECT dlytrn.lodnum,
+                              dlytrn.frstol,
+                              dlytrn.reacod,
+                              dlytrn.ins_dt,
+                              dscmst.short_dsc,
+                              ROW_NUMBER() OVER(PARTITION BY dlytrn.lodnum, dlytrn.frstol
+                                                 ORDER BY ins_dt DESC NULLS LAST) rn
+                         FROM  "++ schema ++".dlytrn
+                         LEFT
+                         JOIN  "++ schema ++".dscmst
+                           ON dscmst.colval = dlytrn.reacod
+                          AND dscmst.colnam = 'reacod'
+                          AND dscmst.locale_id = NVL('ES-ES', 'ES-ES')
+                        WHERE dlytrn.actcod = 'INVSTSCHG'),
+        aux_dlytrn AS (SELECT dt.wh_id,
+                              dt.tostol,
+                              MAX(dt.ins_dt) ins_dt
+                         FROM  "++ schema ++".dlytrn dt
+                        INNER
+                         JOIN  "++ schema ++".locmst lm
+                           ON dt.tostol = lm.stoloc
+                        INNER
+                         JOIN  "++ schema ++".mov_zone mz
+                           ON lm.mov_zone_id = mz.mov_zone_id
+                        WHERE mz.mov_zone_cod = 'ZM-DEVO'
+                        GROUP BY dt.wh_id,
+                              dt.tostol),
+        aux_loc AS (SELECT locmst.wh_id,
+                           locmst.stoloc,
+                           dscmst_locmst.lngdsc subalmacen,
+                           adrmst.adrnam almacen
+                      FROM  "++ schema ++".locmst
+                     INNER
+                      JOIN "++ schema ++".loc_typ
+                        ON loc_typ.loc_typ_id = locmst.loc_typ_id
+                      LEFT
+                      JOIN  "++ schema ++".dscmst dscmst_locmst
+                        ON dscmst_locmst.colnam = 'arecod|wh_id'
+                       AND dscmst_locmst.colval = NVL(locmst.arecod, RTRIM(' ')) || '|' || NVL(locmst.wh_id, RTRIM(' '))
+                       AND dscmst_locmst.locale_id = 'ES-ES'
+                      LEFT
+                      JOIN  "++ schema ++".zonmst
+                        ON zonmst.wrk_zone_id = locmst.wrk_zone_id
+                       AND zonmst.wh_id = locmst.wh_id
+                      LEFT
+                      JOIN "++ schema ++".bldg_mst
+                        ON bldg_mst.bldg_id = zonmst.bldg_id
+                       AND bldg_mst.wh_id = zonmst.wh_id
+                      LEFT
+                      JOIN  "++ schema ++".adrmst
+                        ON bldg_mst.adr_id = adrmst.adr_id
+                      left
+                      join  "++ schema ++".mov_zone
+                        on mov_zone.mov_zone_id = locmst.mov_zone_id
+                       and mov_zone.wh_id = locmst.wh_id
+                      left
+                      join  "++ schema ++".dscmst mov_zon
+                        on mov_zon.colnam = 'mov_zone_cod|wh_id'
+                       and mov_zon.locale_id = 'ES-ES'
+                       and mov_zon.colval = mov_zone.mov_zone_cod || '|' || locmst.wh_id
+                      left
+                      join  "++ schema ++".cntzon
+                        on cntzon.cnt_zone_id = locmst.cnt_zone_id
+                       and cntzon.wh_id = locmst.wh_id
+                      left
+                      join "++ schema ++".dscmst cnt_zon
+                        on cnt_zon.colnam = 'cnt_zone_cod|wh_id'
+                       and cnt_zon.locale_id = 'ES-ES'
+                       and cnt_zon.colval = cntzon.cnt_zone_cod || '|' || locmst.wh_id
+                     WHERE loc_typ.fwiflg = '1'
+                       --and @in_clause_mov_zone:raw
+                       --and @in_clause_cnt_zone:raw),
+      )  ,        todo AS (SELECT idtl.dtlnum,
+                        aux_loc.stoloc ubicacion,
+                        idtl.expire_dte fecha_expiracion,
+                        idtl.lotnum lote,
+                        ilod.lodnum lpn,
+                        ilod.adddte fecha_inventario,
+                        trlr.trlr_stat,
+                        NVL(res.comqty, 0) cant_comp,
+                        idtl.prtnum clave,
+                        idtl.untqty cantidad,
+                        aux_loc.almacen,
+                        SUBSTR(aux_loc.stoloc, 0, INSTR(aux_loc.stoloc, '.') -1) rack,
+                        SUBSTR(aux_loc.stoloc, (INSTR(aux_loc.stoloc, '.') + 1), (INSTR(aux_loc.stoloc, '.', 1, 2) + 1) - (INSTR(aux_loc.stoloc, '.') + 2)) posicion,
+                        SUBSTR(aux_loc.stoloc, INSTR(aux_loc.stoloc, '.', 1, 2) + 1) nivel,
+                        prtdsc.lngdsc descripcion,
+                        prtmst.stccod tipo_clave,
+                        dscmst_prtfam.lngdsc tipo_insumo,
+                        ' ' subdireccion,
+                        aux_loc.subalmacen,
+                        DECODE(prtmst.prtfam, '501', 'Refrigeración', '502', 'Refrigeración', '601', 'Congelación', dscmst_prtfam_grp.lngdsc) subinventario,
+                        prtmst.untcst costo_promedio,
+                        DECODE(prtmst.untcst, null, 0, prtmst.untcst * idtl.untqty) importe,
+                        DECODE(prtmst.untcst, null, 0, (prtmst.untcst * idtl.untqty) *
+                               --SUM(idtl.untqty)
+ 
+                               (SELECT sin_iva
+                                  FROM aux_poldat)) importe_sin_iva,
+                        DECODE(prtmst.untcst, null, 0, (prtmst.untcst * idtl.untqty) *
+                               --SUM(idtl.untqty)
+ 
+                               (SELECT sin_iva
+                                  FROM aux_poldat)) iva,
+                        CASE WHEN idtl.supnum IS NOT NULL THEN adrmst_supmst.adrnam
+                             WHEN idtl.supnum IS NULL THEN aux_rcvlin.adrnam
+                             ELSE null
+                        END proveedor,
+                        CASE WHEN idtl.supnum IS NOT NULL THEN NVL(TRIM(adrmst_supmst.adrnam), 'NA') || ' (' || idtl.supnum || ')'
+                             WHEN idtl.supnum IS NULL
+                         AND aux_rcvlin.supnum IS NOT NULL THEN NVL(TRIM(aux_rcvlin.adrnam), 'NA') || ' (' || aux_rcvlin.supnum || ')'
+                             ELSE null
+                        END dim_proveedor,
+                        DECODE(rcvinv.sadnum, null, aux_rcvlin.sadnum, rcvinv.sadnum) contrato,
+                        prtmst.comcod partida_presupuestal,
+                        dt.ins_dt ingreso_canjebaja,
+                        dscmst_invsts.short_dsc origen_dlytrn,
+                        dscmst_invsts.short_dsc || ' (' || dscmst_invsts.colval || ')' estatus_inventario,
+                        NVL(reacod.short_dsc, dscmst_reacod.short_dsc) motivo_dlytrn,
+                        ' ' registro_unico,
+                        (SELECT distinct 'x'
+                           FROM  "++ schema ++".cntwrk
+                          WHERE cntwrk.stoloc = aux_loc.stoloc
+                            AND cntwrk.cntsts = 'I') en_conteo,
+                        TO_CHAR(prtmst.age_pflnam) dias_surtimiento_ageprofile,
+                        TO_CHAR(round(idtl.expire_dte - sysdate)) vida_util,
+                        aux_rcvlin.tipo_recepcion,
+                        aux_rcvlin.init_rcv_dte fecha_recepcion
+                   FROM  "++ schema ++".invdtl idtl
+                  INNER
+                   JOIN  "++ schema ++".invsub isub
+                     ON idtl.subnum = isub.subnum
+                  INNER
+                   JOIN  "++ schema ++".invlod ilod
+                     ON isub.lodnum = ilod.lodnum
+                        --ubicaciones de almacén
+ 
+                  RIGHT
+                   JOIN  "++ schema ++".aux_loc
+                        --RIGHT JOIN
+ 
+                     ON ilod.wh_id = aux_loc.wh_id
+                    AND ilod.stoloc = aux_loc.stoloc
+                        --descripción del insumo
+ 
+                   LEFT
+                   JOIN  "++ schema ++".prtdsc
+                     ON prtdsc.colnam = 'prtnum|prt_client_id|wh_id_tmpl'
+                    AND prtdsc.colval = NVL(idtl.prtnum, RTRIM(' ')) || '|' || NVL(idtl.prt_client_id, RTRIM(' ')) || '|' || NVL(ilod.wh_id, RTRIM(' '))
+                    AND prtdsc.locale_id = NVL('ES-ES', 'ES-ES')
+                        --reservas
+ 
+                   LEFT
+                   JOIN aux_reservas res
+                     ON ilod.stoloc = res.stoloc
+                    AND idtl.prtnum = res.prtnum
+                        --insumos
+ 
+                   LEFT
+                   JOIN  "++ schema ++".prtmst
+                     ON prtmst.prtnum = idtl.prtnum
+                    AND prtmst.prt_client_id = idtl.prt_client_id
+                    AND prtmst.wh_id_tmpl = ilod.wh_id
+                   LEFT
+                   JOIN  "++ schema ++".prtfam
+                     ON prtfam.prtfam = prtmst.prtfam
+                   LEFT
+                   JOIN  "++ schema ++".prtfam_grp
+                     ON prtfam_grp.prtfamgrp = prtfam.prtfamgrp
+                   LEFT
+                   JOIN  "++ schema ++".dscmst dscmst_prtfam
+                     ON dscmst_prtfam.colnam = 'prtfam'
+                    AND dscmst_prtfam.colval = prtmst.prtfam
+                    AND dscmst_prtfam.locale_id = NVL('ES-ES', 'ES-ES')
+                   LEFT
+                   JOIN  "++ schema ++".dscmst dscmst_prtfam_grp
+                     ON dscmst_prtfam_grp.colnam = 'prtfamgrp'
+                    AND dscmst_prtfam_grp.colval = prtfam_grp.prtfamgrp
+                    AND dscmst_prtfam_grp.locale_id = NVL('ES-ES', 'ES-ES')
+                        --recepciones
+ 
+                   LEFT
+                   JOIN  "++ schema ++".rcvlin
+                     ON idtl.supnum = rcvlin.supnum
+                    AND idtl.rcvkey = rcvlin.rcvkey
+                    AND idtl.prtnum = rcvlin.prtnum
+                    AND ilod.wh_id = rcvlin.wh_id
+                   LEFT
+                   JOIN  "++ schema ++".rcvinv
+                     ON rcvlin.trknum = rcvinv.trknum
+                    AND rcvlin.supnum = rcvinv.supnum
+                    AND rcvlin.invnum = rcvinv.invnum
+                    AND rcvlin.wh_id = rcvinv.wh_id
+                    AND rcvlin.client_id = rcvinv.client_id
+                   LEFT
+                   JOIN  "++ schema ++".rcvtrk
+                     ON rcvlin.trknum = rcvtrk.trknum
+                    AND rcvlin.wh_id = rcvtrk.wh_id
+                   LEFT
+                   JOIN  "++ schema ++".trlr
+                     ON rcvtrk.trlr_id = trlr.trlr_id
+                    AND rcvlin.wh_id = trlr.stoloc_wh_id
+                        --datos relacionados con la recepción, si no hay recepción directa
+ 
+                   LEFT
+                   JOIN aux_rcvlin
+                     ON idtl.prtnum = aux_rcvlin.prtnum
+                    AND idtl.expire_dte = aux_rcvlin.expire_dte
+                    AND idtl.lotnum = aux_rcvlin.lotnum
+                    AND ilod.wh_id = aux_rcvlin.wh_id
+                    AND aux_rcvlin.rn = 1
+                        --proveedor directo del inventory
+ 
+                   LEFT
+                   JOIN  "++ schema ++".supmst
+                     ON idtl.supnum = supmst.supnum
+                   LEFT
+                   JOIN "++ schema ++".adrmst adrmst_supmst
+                     ON supmst.adr_id = adrmst_supmst.adr_id
+                        --reacod
+ 
+                   LEFT
+                   JOIN aux_reacod reacod
+                     ON ilod.lodnum = reacod.lodnum
+                    AND ilod.stoloc = reacod.frstol
+                    AND reacod.rn = 1
+                   LEFT
+                   JOIN  "++ schema ++".dscmst dscmst_reacod
+                     ON dscmst_reacod.colnam = 'invsts'
+                    AND dscmst_reacod.locale_id = NVL('ES-ES', 'ES-ES')
+                    AND dscmst_reacod.colval = idtl.invsts
+                        --daily transactions
+ 
+                   LEFT
+                   JOIN aux_dlytrn dt
+                     ON ilod.wh_id = dt.wh_id
+                    AND ilod.stoloc = dt.tostol
+                        --inventory status
+ 
+                   LEFT
+                   JOIN "++ schema ++".dscmst dscmst_invsts
+                     ON idtl.invsts = dscmst_invsts.colval
+                    AND dscmst_invsts.colnam = 'invsts'
+                    AND dscmst_invsts.locale_id = 'ES-ES'
+                  WHERE aux_loc.wh_id = NVL('AVIOR-27', 'AVIOR-27')
+                    AND aux_loc.stoloc not like '%PERM%'
+                 --no hay trailer asociado o el estatus del trailer es D
+                 -- AAGUILAR 290923: Se agrega el filtro del estatus del trailer para que no salga lo que no se ha despachado del recibo
+ 
+                    AND (trlr.trlr_stat = 'D' OR trlr.trlr_id IS NULL))
+SELECT dtlnum,
+        trlr_stat,
+        TO_CHAR(fecha_inventario, 'DD/Mon/YYYY', 'NLS_DATE_LANGUAGE = spanish') fecha_inventario,
+        clave,
+        descripcion,
+        cantidad,
+        tipo_clave,
+        tipo_insumo,
+        subdireccion,
+        almacen,
+        subalmacen,
+        subinventario,
+        rack,
+        posicion,
+        nivel,
+        lote,
+        TO_CHAR(fecha_expiracion, 'DD/Mon/YYYY', 'NLS_DATE_LANGUAGE = spanish') fecha_expiracion,
+        TO_CHAR(costo_promedio, 'fmL99G999G999G999G999D00') costo_promedio,
+        TO_CHAR(importe, 'fmL99G999G999G999G999D00') importe,
+        TO_CHAR(importe_sin_iva, 'fmL99G999G999G999G999D00') importe_sin_iva,
+        TO_CHAR(iva, 'fmL99G999G999G999G999D00') iva,
+        lpn,
+        proveedor,
+        contrato,
+        partida_presupuestal,
+        TO_CHAR(ingreso_canjebaja, 'DD/Mon/YYYY', 'NLS_DATE_LANGUAGE = spanish') ingreso_canjebaja,
+        origen_dlytrn,
+        motivo_dlytrn,
+        cant_comp,
+        cantidad cant_total,
+        ROW_NUMBER() OVER(PARTITION BY ubicacion, clave
+                           ORDER BY fecha_expiracion,
+                                 lote) secuencia_reserva,
+        CASE
+             --no hay cantidad reservada
+ 
+             WHEN cant_comp = 0 THEN 0
+             --el registro anterior ya completó o superó la cantidad reservada
+ 
+             WHEN NVL(SUM(cantidad) OVER(PARTITION BY ubicacion, clave
+                                          ORDER BY fecha_expiracion,
+                                                lote ROWS BETWEEN UNBOUNDED PRECEDING
+                                            AND 1 PRECEDING), 0) >= cant_comp THEN 0
+             --la cantidad reservada aún es mayor o igual al acumulado
+ 
+             WHEN cant_comp >= SUM(cantidad) OVER(PARTITION BY ubicacion, clave
+                                                   ORDER BY fecha_expiracion,
+                                                         lote ROWS BETWEEN UNBOUNDED PRECEDING
+                                                     AND CURRENT ROW) THEN cantidad
+             --el registro actual completa o es el primero que excede la cantidad reservada
+ 
+             ELSE cant_comp - NVL(SUM(cantidad) OVER(PARTITION BY ubicacion, clave
+                                                      ORDER BY fecha_expiracion,
+                                                            lote ROWS BETWEEN UNBOUNDED PRECEDING
+                                                        AND 1 PRECEDING), 0)
+        END stock_reservado,
+        cantidad -
+        CASE
+             --no hay cantidad reservada
+ 
+             WHEN cant_comp = 0 THEN 0
+             --el registro anterior ya completó o superó la cantidad reservada
+ 
+             WHEN NVL(SUM(cantidad) OVER(PARTITION BY ubicacion, clave
+                                          ORDER BY fecha_expiracion,
+                                                lote ROWS BETWEEN UNBOUNDED PRECEDING
+                                            AND 1 PRECEDING), 0) >= cant_comp THEN 0
+             --la cantidad reservada aún es mayor o igual al acumulado
+ 
+             WHEN cant_comp >= SUM(cantidad) OVER(PARTITION BY ubicacion, clave
+                                                   ORDER BY fecha_expiracion,
+                                                         lote ROWS BETWEEN UNBOUNDED PRECEDING
+                                                     AND CURRENT ROW) THEN cantidad
+             --el registro actual completa o es el primero que excede la cantidad reservada
+ 
+             ELSE cant_comp - NVL(SUM(cantidad) OVER(PARTITION BY ubicacion, clave
+                                                      ORDER BY fecha_expiracion,
+                                                            lote ROWS BETWEEN UNBOUNDED PRECEDING
+                                                        AND 1 PRECEDING), 0)
+        END stock_disponible,
+        ubicacion,
+        registro_unico,
+        en_conteo,
+        dias_surtimiento_ageprofile,
+        vida_util,
+        tipo_recepcion,
+        TO_CHAR(fecha_recepcion, 'DD/Mon/YYYY', 'NLS_DATE_LANGUAGE = spanish') fecha_recepcion
+   FROM todo
+  ORDER BY
+    clave,
+    ubicacion,
+    fecha_expiracion,
+    lote"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="client-db-wms-get-inventory" doc:id="44a51c83-807c-4965-b921-b0f78d21a89b" name="client-db-wms-get-inventory"/>
+		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="2ccba4d0-fba8-47f3-a5cc-adcb580934b6" />
+	</sub-flow>
+</mule>

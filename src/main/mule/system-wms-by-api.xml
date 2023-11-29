@@ -3,7 +3,7 @@
     <http:listener-config name="system-wms-by-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS" tlsContext="TLS_Context" />
     </http:listener-config>
-    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.22:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.32:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="system-wms-by-api-main">
         <http:listener config-ref="system-wms-by-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -208,15 +208,17 @@ attributes.uriParams.'provider_id']]></ee:set-variable>
     </flow>
     <flow name="get:\wms\provider:system-wms-by-api-config">
         <ee:transform doc:name="Transform Message">
-            <ee:message>
-            </ee:message>
-			<ee:variables >
-				<ee:set-variable variableName="providers_id" ><![CDATA[%dw 2.0
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="providers_id"><![CDATA[%dw 2.0
 output application/json
 ---
 (attributes.queryParams.providers_id default "") replace "," with ("','")]]></ee:set-variable>
-			</ee:variables>
+            </ee:variables>
         </ee:transform>
-		<flow-ref doc:name="orchestrator-get-provider" doc:id="6f79b76e-80b1-4d9c-9752-5441d71798c8" name="orchestrator-get-providersarray"/>
+        <flow-ref doc:name="orchestrator-get-provider" doc:id="6f79b76e-80b1-4d9c-9752-5441d71798c8" name="orchestrator-get-providersarray" />
+    </flow>
+    <flow name="get:\wms\inventory:system-wms-by-api-config">
+		<flow-ref doc:name="call orchestrator-get-inventory-report" doc:id="60b39018-c7ab-4979-98be-0852e4421fad" name="orchestrator-get-inventory-report"/>
     </flow>
 </mule>
