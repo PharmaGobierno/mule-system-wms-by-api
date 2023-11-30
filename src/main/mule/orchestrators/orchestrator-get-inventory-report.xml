@@ -407,7 +407,17 @@ SELECT dtlnum,
     lote"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="1f558088-75a1-4d36-869d-9c8a386e2a94" message="Init get inventory report" />
 		<flow-ref doc:name="client-db-wms-get-inventory" doc:id="44a51c83-807c-4965-b921-b0f78d21a89b" name="client-db-wms-get-inventory"/>
-		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="2ccba4d0-fba8-47f3-a5cc-adcb580934b6" />
+		<logger level="INFO" doc:name="Logger1" doc:id="7837de09-df58-49d7-a968-c5490afdd4b2" message="End get inventory report" />
+		<ee:transform doc:name="Transform Message" doc:id="4ef47fd6-6e89-4b82-89fe-82b6dc27514a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger2" doc:id="57c4e9bb-b1cf-479d-b047-dee5eb41157c" message="End transform data to json"/>
 	</sub-flow>
 </mule>
