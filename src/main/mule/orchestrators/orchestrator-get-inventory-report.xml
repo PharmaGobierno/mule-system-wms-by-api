@@ -132,8 +132,8 @@ var schema = p('database.wms.blueyonder.schema')
                        and cnt_zon.locale_id = 'ES-ES'
                        and cnt_zon.colval = cntzon.cnt_zone_cod || '|' || locmst.wh_id
                      WHERE loc_typ.fwiflg = '1'
-                       --and @in_clause_mov_zone:raw
-                       --and @in_clause_cnt_zone:raw),
+                       "++ attributes.queryParams.move_zone ++"
+                       "++ attributes.queryParams.count_zone_ ++"
       )  ,        todo AS (SELECT idtl.dtlnum,
                         aux_loc.stoloc ubicacion,
                         idtl.expire_dte fecha_expiracion,
