@@ -14,7 +14,7 @@ output application/java
 
 var schema = p('database.wms.blueyonder.schema')
 var movzone = if (attributes.queryParams.move_zone != null) "and mov_zone.mov_zon_cod = " ++ attributes.queryParams.move_zone  else ""
-var contzone = if (attributes.queryParams.count_zone != null) "and cntzon.cnt_zon_cod = " ++ attributes.queryParams.count_zone  else ""
+var contzone = if (attributes.queryParams.count_zone != null) "and cntzon.cnt_zone_cod = " ++ attributes.queryParams.count_zone  else ""
 
 ---
 "WITH aux_reservas AS (SELECT invloc.prtnum,
