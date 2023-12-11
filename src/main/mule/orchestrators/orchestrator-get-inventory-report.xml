@@ -13,6 +13,8 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 output application/java
 
 var schema = p('database.wms.blueyonder.schema')
+var movzone = if (attributes.queryParams.move_zone != null) "and mov_zone.mov_zon_cod = " ++ attributes.queryParams.move_zone  else ""
+var contzone = if (attributes.queryParams.count_zone != null) "and cntzon.cnt_zon_cod = " ++ attributes.queryParams.count_zone  else ""
 
 ---
 "WITH aux_reservas AS (SELECT invloc.prtnum,
@@ -132,8 +134,8 @@ var schema = p('database.wms.blueyonder.schema')
                        and cnt_zon.locale_id = 'ES-ES'
                        and cnt_zon.colval = cntzon.cnt_zone_cod || '|' || locmst.wh_id
                      WHERE loc_typ.fwiflg = '1'
-                       "++ attributes.queryParams.move_zone ++"
-                       "++ attributes.queryParams.count_zone_ ++"
+                       "++ movzone 
+                        ++ contzone ++"
       )  ,        todo AS (SELECT idtl.dtlnum,
                         aux_loc.stoloc ubicacion,
                         idtl.expire_dte fecha_expiracion,
