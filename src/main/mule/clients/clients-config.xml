@@ -20,4 +20,14 @@ http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/
 	<db:config name="Database_Config_WMS_BlueYonder" doc:name="Database Config" doc:id="0eac2af5-f8d6-4bf7-b7e6-6c95990e28ec" >
 		<db:oracle-connection host="${database.wms.blueyonder.server}" user="${database.wms.blueyonder.username}" password="${database.wms.blueyonder.password}" serviceName="${database.wms.blueyonder.name}" port="${database.wms.blueyonder.port}"/>
 	</db:config>
+	<http:request-config name="Request_AWS_Mega" doc:name="HTTP Request configuration" doc:id="14527004-92a1-4010-9c3a-13396f9b5a05" responseTimeout="${client.wms.mega.https.response.timeout}">
+		<http:request-connection host="${client.wms.mega.https.host}" port="${client.wms.mega.https.port}" connectionIdleTimeout="${client.wms.mega.https.connection.idle.timeout}" maxConnections="${client.wms.mega.https.max.connections}" protocol="HTTPS">
+			<tls:context >
+				<tls:trust-store path="traxion_global.jks" type="jks" password="Tr@xion123"/>
+			</tls:context>
+		</http:request-connection>
+	</http:request-config>
+	<db:config name="Database_Config_WMS_Mega" doc:name="Database Config" doc:id="93f8b7d2-1ee3-49c4-bca9-3b2eb406c9cc" >
+		<db:oracle-connection host="${database.wms.mega.server}" user="${database.wms.mega.username}" password="${database.wms.mega.password}" serviceName="${database.wms.mega.name}" port="${database.wms.mega.port}"/>
+	</db:config>
 </mule>
