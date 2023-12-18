@@ -6,6 +6,7 @@
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="orchestrators-logistics-footprint" doc:id="9de8a181-03dc-4282-8646-dec20083d7c8" >
 <!-- [STUDIO:"Payload"]		<logger level="INFO" doc:name="Payload" doc:id="4153579e-e855-471f-bd59-07630cedd630" message="payloadXML: #[payload] " /> [STUDIO] -->
+		<logger level="INFO" doc:name="Logger" doc:id="2c515e12-a035-4d9b-a71a-fc56e54663df" message="footprint - #[attributes.queryParams.customer_name]" />
 		<ee:transform doc:name="get Skus" doc:id="c7a34687-61f3-4324-b958-cd1dcfbd1680">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
@@ -20,25 +21,14 @@ output application/json
 []]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<choice doc:name="Choice" doc:id="173f1220-efb0-446f-a5ec-281f2d8033cd" >
-			<when expression='#[attributes.queryParams.customer_name == "ISSSTE"]'>
-				<flow-ref doc:name="orchestrators-post-logistics-footprint-by-Sub_Flow" doc:id="8fbc4661-8438-4f22-ba86-aa2f45991d22" name="orchestrators-post-logistics-footprint-by-Sub_Flow"/>
-			</when>
-			<when expression='#[attributes.queryParams.customer_name == "MEGA"]'>
-				<flow-ref doc:name="orchestrators-post-logistics-footprint-mega-Sub_Flow" doc:id="dc5abbf0-521b-44c6-a030-cf6d8f7751c0" name="orchestrators-post-logistics-footprint-mega-Sub_Flow"/>
-			</when>
-		</choice>
-		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
-		<!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" /> [STUDIO] -->
-	</sub-flow>
-	<sub-flow name="orchestrators-post-logistics-footprint-by-Sub_Flow" doc:id="533794ac-76db-4d34-ab21-c2ff7c93693e" >
-		<ee:transform doc:name="Set Query" doc:id="eb7c4d02-f43b-4a12-8ad3-a0e0386691e2">
+		<ee:transform doc:name="Set Query" doc:id="61f4c640-70fc-4df6-9334-8bb6e5273615">
 			<ee:message />
 			<ee:variables>
-				<ee:set-variable variableName="queryLogisticFootprint"><![CDATA[%dw 2.0
+				<ee:set-variable variableName="query"><![CDATA[%dw 2.0
+import modules::pharma
 output application/json
-var schema = p('database.wms.blueyonder.schema')
-var avior = p('database.wms.blueyonder.avior')
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
+var avior = pharma::getAvior(attributes.queryParams.customer_name, p('database.wms.blueyonder.avior'), p('database.wms.mega.avior'))
 ---
 "SELECT 
     iv.uomcod,/*Pallets, Pieza, Caja, */
@@ -61,38 +51,9 @@ WHERE iv.ftpcod = pftpc.ftpcod
 ]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<flow-ref doc:name="Call to client-get-availability-db-wms-get-logistics-footprint" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-logistics-footprint" />
-	</sub-flow>
-	<sub-flow name="orchestrators-post-logistics-footprint-mega-Sub_Flow" doc:id="7b52fc7b-35e0-493d-9042-933462611a01" >
-		<ee:transform doc:name="Set Query" doc:id="61f4c640-70fc-4df6-9334-8bb6e5273615" >
-			<ee:message />
-			<ee:variables >
-				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
-output application/json
-var schema = p('database.wms.mega.schema')
-var avior = p('database.wms.mega.avior')
----
-"SELECT 
-    iv.uomcod,/*Pallets, Pieza, Caja, */
-    iv.prtnum, /*codigo producto*/
-    iv.ftpcod, /*codigo huella logistica*/
-    iv.untqty,
-    iv.len,
-    iv.wid,
-    iv.hgt,
-    iv.grswgt,
-    iv.netwgt,
-    pftpc.defftp_flg,
-    pftpc.caslvl,
-    iv.len * iv.wid * iv.hgt vol
-FROM "++ schema ++".prtftp_dtl iv,
-    (SELECT p.ftpcod, p.caslvl, p.defftp_flg FROM "++ schema ++".prtftp p  WHERE  p.wh_id = 'AVIOR-27') pftpc
-WHERE iv.ftpcod = pftpc.ftpcod
-    AND iv.ftpcod IN ( " ++ payload ++ ") and
-	iv.wh_id='" ++ avior ++ "'"
-]]></ee:set-variable>
-			</ee:variables>
-		</ee:transform>
-		<flow-ref doc:name="Call to client-get-availability-db-wms-get-logistics-footprint" doc:id="97e766e9-7b9c-48a9-8c87-d7dfbcd6b60c" name="client-db-mega-select" />
+		<logger level="INFO" doc:name="Logger" doc:id="54629675-be92-432a-a237-6b0979fb93cf" message="#[vars.query]" />
+		<flow-ref doc:name="client-get-availability-db-get-logistics-footprint" doc:id="3eb7322e-8a5b-41de-b92d-80d410b110b8" name="common-pharma-selectSub_Flow"/>
+		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
+		<!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" /> [STUDIO] -->
 	</sub-flow>
 </mule>

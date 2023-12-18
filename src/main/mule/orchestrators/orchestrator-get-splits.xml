@@ -26,9 +26,10 @@ output application/json
 		<ee:transform doc:name="Set Query" doc:id="a250d954-dacd-4fd7-9dda-f3884384b296">
 			<ee:message />
 			<ee:variables>
-				<ee:set-variable variableName="querySplitNumber"><![CDATA[%dw 2.0
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
 output application/json
-var schema = p('database.wms.blueyonder.schema')
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 ---
 "  WITH Enviados AS (
     SELECT DISTINCT sl.ORDNUM ,COUNT(DISTINCT sl.SHIP_ID) AS ENVIOS
@@ -51,6 +52,7 @@ FROM Enviados, Despachados"
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Call to client-db-wms-get-splits" doc:id="6a5597a1-594e-4c45-9c89-60d1a22dfce9" name="client-db-wms-get-splits" />
+		<flow-ref doc:name="Call to client-db-get-splits" doc:id="f767a5aa-203a-4248-8716-01e80effde4a" name="common-pharma-selectSub_Flow" />
 		<ee:transform doc:name="Transform Message" doc:id="9c21a8e9-7d78-418a-a620-33e1e343fffa" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0

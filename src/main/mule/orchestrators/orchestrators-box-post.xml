@@ -17,9 +17,10 @@ payload.code]]></ee:set-payload>
 			<ee:message >
 			</ee:message>
 			<ee:variables >
-				<ee:set-variable variableName="getLpnFull" ><![CDATA[%dw 2.0
-output application/java
-var schema = p('database.wms.blueyonder.schema')
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
+output application/json
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 ---
 "select *
 from
@@ -131,7 +132,7 @@ where pv1.ordnum in (select distinct ordnum
     and ipv2.subnum like 'CTN%')"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<flow-ref doc:name="client-db-wms-get-lpn-full" doc:id="8a5bfe53-7152-4e59-ab01-4e9e064412c1" name="client-db-wms-get-lpn-full" />
+		<flow-ref doc:name="client-db-get-lpn-full" doc:id="f619373a-310e-459e-af52-6ba2372e3955" name="common-pharma-selectSub_Flow" />
 		<ee:transform doc:name="Set Response" doc:id="31217aa4-0b5d-4000-998e-48776c7178af" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -178,9 +179,10 @@ if(payload.type_box == 'delivery') vars.surtidosResponse[0].LPN else payload.cod
 			<ee:message >
 			</ee:message>
 			<ee:variables >
-				<ee:set-variable variableName="getLpn" ><![CDATA[%dw 2.0
-output application/java
-var schema = p('database.wms.blueyonder.schema')
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
+output application/json
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 ---
 "select * from
 (select count(distinct pv2.ctnnum) " SurtidosEnPalet"
@@ -227,7 +229,7 @@ var schema = p('database.wms.blueyonder.schema')
     and ipv2.subnum like 'CTN%') c"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<flow-ref doc:name="client-db-wms-get-lpn" doc:id="9206226d-d7d1-400e-b5dd-dd652f9c55e6" name="client-db-wms-get-lpn" />
+		<flow-ref doc:name="client-db-get-lpn" doc:id="d9b88ab7-36ba-4381-8c5e-12fd3ce08dcf" name="common-pharma-selectSub_Flow" />
 		<ee:transform doc:name="Set Response" doc:id="016dd72a-2e2b-4178-a457-c02ac97b3ebc" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -251,9 +253,10 @@ payload.code
 			<ee:message >
 			</ee:message>
 			<ee:variables >
-				<ee:set-variable variableName="getBox" ><![CDATA[%dw 2.0
-output application/java
-var schema = p('database.wms.blueyonder.schema')
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
+output application/json
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 ---
 "select
 	*
@@ -330,7 +333,7 @@ on
 		and appqty = 0) "Mis""]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<flow-ref doc:name="client-db-wms-get-box" doc:id="552d1735-561e-4f9a-9963-693180c8a249" name="client-db-wms-get-box" />
+		<flow-ref doc:name="client-db-get-box" doc:id="7f7e3b79-c3a2-4bb5-8550-2fcdf989ac4f" name="common-pharma-selectSub_Flow" />
 		<ee:transform doc:name="Set Response" doc:id="345a0cb1-1ec5-4c5f-8607-bec6f20ef55b">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0

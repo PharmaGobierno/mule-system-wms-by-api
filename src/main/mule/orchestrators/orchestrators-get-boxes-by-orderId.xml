@@ -9,9 +9,10 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 			<ee:message >
 			</ee:message>
 			<ee:variables >
-				<ee:set-variable variableName="cartonOrder" ><![CDATA[%dw 2.0
-output application/java
-var schema = p('database.wms.blueyonder.schema')
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
+output application/json
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 ---
 "select
 	(
@@ -727,7 +728,7 @@ from
 	dual"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<flow-ref doc:name="client-db-wms-cajas-carton-order" doc:id="20daf094-882a-4a33-9f39-7c72d82de4e4" name="client-db-wms-cajas-carton-order"/>
+		<flow-ref doc:name="client-db-cajas-carton-order" doc:id="ba38981e-38a0-45e8-a520-684118e14564" name="common-pharma-selectSub_Flow" />
 		<ee:transform doc:name="Transform Message" doc:id="af404fec-0c56-47df-9f01-0ba5feb6445b" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0

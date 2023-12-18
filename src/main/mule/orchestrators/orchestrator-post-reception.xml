@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+<!-- [STUDIO:"orchestrator-post-receptionSub_Flow"]	<sub-flow name="orchestrator-post-receptionSub_Flow" doc:id="282b06a3-bddd-4345-a425-6e74d0f83692" >
+		<flow-ref doc:name="Call to clients-wms-blueyonder-request-login" doc:id="0f616a83-3ee0-4268-bfed-18fd985b86d2" name="clients-wms-blueyonder-request-login" />
+		<flow-ref doc:name="Call clients-post-wms-blueyonder-login-api" doc:id="c0f526ca-10bf-4fdd-8e03-bb19b6bc4e48" name="clients-post-wms-blueyonder-login-api" target="loginResponse" />
+		<flow-ref doc:name="Call to clients-post-wms-blueyonder-service-api" doc:id="9e01f63f-d56a-41ca-ad26-25e8e6c648dc" name="clients-post-wms-blueyonder-service-api" />
+		<flow-ref doc:name="Call to clients-wms-blueyonder-set-response" doc:id="ac0e2b0e-1e0a-4cff-8000-dfd57f5f7aa7" name="clients-wms-blueyonder-set-response" />
+	</sub-flow> [STUDIO] -->
+</mule>

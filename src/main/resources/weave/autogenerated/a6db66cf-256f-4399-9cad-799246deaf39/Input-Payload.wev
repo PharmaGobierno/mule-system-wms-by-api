@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_a6db66cf_256f_4399_9cad_799246deaf39_Input_Payload = Array<{|  SHIP_ID: String,   PRTNUM?: String,   FECHA_DESPACHO?: Date,   UMU_IDESTACION?: String,   TIPOESTACION_PARADA: String,   CALLE?: String,   ESTADO?: String,   PAIS?: String,   TOTAL_MERCANCIAS?: Number,   UNIDAD_PESO?: String,   CLAVESAT?: String,   DESCRIPCION?: String,   CANTIDADES?: Number,   PELIGROSO?: String,   CLAVE_PELIGROSO?: String,   PESOXARTICULO?: Number,   PERMISO_TRANSPORTE?: String,   ASEGURADORA?: String,   POLIZA?: String,   TIPO_VEHICULO?: String,   PLACA?: String,   MODELO?: String,   TIPO_REMOLQUE?: String,   PLACA_REMOLQUE?: String,   RFC_OPERADOR?: String,   NOMBRE_OPERADOR?: String,   LIC_OPERADOR?: String,   RFC_TRANSP?: String,   NOMBRE_TRANSP?: String,   CALLE_TRANSP?: String,   ESTADO_TRANSP?: String,   PAIS_TRANSP?: String,   CP_TRANSP?: String,   FECHA_LEVANTAMIENTO: Date,   PARTIDA_PRESUPUESTAL?: String,   MONTO?: String|}>
+

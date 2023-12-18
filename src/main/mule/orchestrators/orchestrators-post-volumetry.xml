@@ -23,9 +23,11 @@ output application/json
 		<ee:transform doc:name="Set Query" doc:id="cc6ada58-3a45-476d-97d5-8dcf732c3e62">
 			<ee:message />
 			<ee:variables>
-				<ee:set-variable variableName="queryVolumetry" ><![CDATA[%dw 2.0
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
 output application/json
-var schema = p('database.wms.blueyonder.schema')
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
+var avior = pharma::getAvior(attributes.queryParams.customer_name, p('database.wms.blueyonder.avior'), p('database.wms.mega.avior'))
 ---
 "SELECT
 	prtnum,
@@ -38,11 +40,11 @@ FROM
 	"++ schema ++".PRTFTP_DTL
 WHERE
 	prtnum IN (" ++ payload ++ ")
-	AND wh_id = 'AVIOR-27'"
+	AND wh_id = '" ++ avior ++ "'"
 ]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<flow-ref doc:name="Call to client-db-wms-get-volumetry" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-volumetry" />
+		<flow-ref doc:name="Call to client-db-get-volumetry" doc:id="7db43e03-5ad6-4fcf-97cb-a17fb12b348f" name="common-pharma-selectSub_Flow" />
 		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
 <!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" /> [STUDIO] -->
 	</sub-flow>

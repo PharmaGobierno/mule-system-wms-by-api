@@ -9,9 +9,10 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 			<ee:message >
 			</ee:message>
 			<ee:variables >
-				<ee:set-variable variableName="getLines" ><![CDATA[%dw 2.0
-output application/java
-var schema = p('database.wms.blueyonder.schema')
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
+output application/json
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 ---
 "select shipment.host_ext_id host_ship_id,
                 shipment.host_client_id host_client_id,
@@ -160,7 +161,7 @@ var schema = p('database.wms.blueyonder.schema')
                 ord_line.load_attr5_cfg"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<flow-ref doc:name="client-db-wms-get-lines" doc:id="6a5597a1-594e-4c45-9c89-60d1a22dfce9" name="client-db-wms-get-lines"/>
+		<flow-ref doc:name="client-db-get-lines" doc:id="a1f71c6e-0f7e-415b-a397-6d977db0ee43" name="common-pharma-selectSub_Flow" />
 		<ee:transform doc:name="Transform Message" doc:id="6948d4d7-c243-4115-aafe-2702fdd6a921" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<sub-flow name="common-pharma-selectSub_Flow" doc:id="4a27211e-821c-48de-a6b2-dd8d510f0825" >
+		<choice doc:name="Choice" doc:id="dcf748cc-19f1-4023-bcc9-4a4d902103dc" >
+			<when expression='#[attributes.queryParams.customer_name == "ISSSTE"]' >
+				<flow-ref doc:name="client-db-wms-select-by" doc:id="07cd5130-6513-4428-9dc5-8c65c56b840b" name="client-db-wms-select" />
+			</when>
+			<when expression='#[attributes.queryParams.customer_name == "MEGA"]' >
+				<flow-ref doc:name="client-db-wms-select-mega" doc:id="7a14503b-42a7-4ac7-9842-a9ed84a4a6e1" name="client-db-mega-select" />
+			</when>
+			<otherwise >
+				<flow-ref doc:name="client-db-wms-select-by" doc:id="5f79c88c-ffc9-47c8-a3c7-4cea9a4491a3" name="client-db-wms-select" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

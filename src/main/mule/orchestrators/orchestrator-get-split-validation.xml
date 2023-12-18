@@ -22,9 +22,10 @@ output application/json
 		<ee:transform doc:name="Set Query" doc:id="b2c4fff1-4a64-48ae-b9a1-0bab0e45ced3">
 			<ee:message />
 			<ee:variables>
-				<ee:set-variable variableName="querySplitValidation" ><![CDATA[%dw 2.0
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
 output application/json
-var schema = p('database.wms.blueyonder.schema')
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 ---
 "select
 distinct ord.ordnum,
@@ -41,7 +42,7 @@ group by ord.ordnum"
 ]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<flow-ref doc:name="Call to client-db-wms-get-split-validation" doc:id="6a5597a1-594e-4c45-9c89-60d1a22dfce9" name="client-db-wms-get-split-validation"/>
+		<flow-ref doc:name="Call to client-db-get-split-validation" doc:id="e180bcda-eeba-46cf-b209-cb3c516e935d" name="common-pharma-selectSub_Flow" />
 		<ee:transform doc:name="Transform Message" doc:id="6948d4d7-c243-4115-aafe-2702fdd6a921" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0

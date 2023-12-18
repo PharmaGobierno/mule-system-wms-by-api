@@ -24,9 +24,10 @@ output application/json
             <ee:message >
             </ee:message>
             <ee:variables >
-                <ee:set-variable variableName="queryAvailability" ><![CDATA[%dw 2.0
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
 output application/json
-var schema = p('database.wms.blueyonder.schema')
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 ---
 "WITH area_excl AS
 (
@@ -286,7 +287,7 @@ GROUP BY
 "]]></ee:set-variable>
             </ee:variables>
         </ee:transform>
-		<flow-ref doc:name="Call to client-db-wms-get-availability" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-availability" />
+		<flow-ref doc:name="Call to client-db-get-availability" doc:id="949a2585-01cb-44bd-983b-3394af2e1747" name="common-pharma-selectSub_Flow" />
 		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
 <!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" /> [STUDIO] -->
 	</sub-flow>

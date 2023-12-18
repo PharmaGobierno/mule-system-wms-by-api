@@ -24,10 +24,10 @@ output application/json
 			<ee:message >
 			</ee:message>
 			<ee:variables >
-				<ee:set-variable variableName="querypartFoot" ><![CDATA[%dw 2.0
-output application/java
-
-var schema = p('database.wms.blueyonder.schema')
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
+output application/json
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 
 ---
 "select shipment.ship_id,
@@ -179,7 +179,7 @@ group by ord.ordnum,
         shipment_line.pckgr1"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<flow-ref doc:name="Call to client-db-wms-get-partfoot-details" doc:id="473e1111-8e9a-4c7e-aa9d-dba96c4d8d27" name="client-db-wms-get-partfoot-details" />
+		<flow-ref doc:name="Call to client-db-get-partfoot-details" doc:id="cdacba5c-3ac4-49f5-90d1-7128299ec81c" name="common-pharma-selectSub_Flow" />
 		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
 <!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" /> [STUDIO] -->
 	</sub-flow>
@@ -202,9 +202,11 @@ output application/json
 		<ee:transform doc:name="Set Query" doc:id="69db9844-b100-4dfa-bc38-071b75919f7b">
 			<ee:message />
 			<ee:variables>
-				<ee:set-variable variableName="queryBoxQuantity" ><![CDATA[%dw 2.0
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
 output application/json
-var schema = p('database.wms.blueyonder.schema')
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
+var avior = pharma::getAvior(attributes.queryParams.customer_name, p('database.wms.blueyonder.avior'), p('database.wms.mega.avior'))
 ---
 "SELECT
   DISTINCT shipment_line.ordnum  ordnum,
@@ -243,10 +245,10 @@ FROM
     "++ schema ++".shipment JOIN "++ schema ++".shipment_line ON  shipment.ship_id= shipment_line.ship_id
 WHERE 1=1
    AND shipment_line.ordnum IN (" ++ payload ++ ")
-   AND shipment.wh_id = 'AVIOR-27'"]]></ee:set-variable>
+   AND shipment.wh_id = '" ++ avior ++ "'"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<flow-ref doc:name="Call to client-db-wms-get-box-quantity" doc:id="05a24bf2-b1ce-4b54-8299-777bfdc73840" name="client-db-wms-get-box-quantity" />
+		<flow-ref doc:name="Call to client-db-get-box-quantity" doc:id="ead2d9e6-acde-49b5-b994-190ac577ade3" name="common-pharma-selectSub_Flow" />
 		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="dceded23-06e1-463e-9634-bb05e47220fe" />
 <!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="b8382766-249f-470b-9f40-fd61ce1ebfc6" message="Response XML: #[payload]" /> [STUDIO] -->
 	</sub-flow>

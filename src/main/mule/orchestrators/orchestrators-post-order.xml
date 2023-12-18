@@ -7,10 +7,25 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 	<sub-flow name="orchestrators-update-order" doc:id="9de8a181-03dc-4282-8646-dec20083d7c8" >
 <!-- [STUDIO:"Payload"]		<logger level="INFO" doc:name="Payload" doc:id="4153579e-e855-471f-bd59-07630cedd630" message="payloadXML: #[payload] " /> [STUDIO] -->
 		<flow-ref doc:name="Call to clients-wms-blueyonder-save-payload" doc:id="5f4b9712-fa76-49dc-b4d8-2d18569fd9f5" name="clients-wms-blueyonder-save-payload"/>
-		<flow-ref doc:name="Call to clients-wms-blueyonder-request-login" doc:id="5f584f71-ebe0-461b-80f7-23e0905fc3a9" name="clients-wms-blueyonder-request-login"/>
-		<flow-ref doc:name="Call clients-post-wms-blueyonder-login-api" doc:id="e6a77698-76e2-4ba0-962d-036dc0381695" name="clients-post-wms-blueyonder-login-api" target="loginResponse"/>
-		<flow-ref doc:name="Call to clients-post-wms-blueyonder-service-api" doc:id="5343fc5f-7a6e-4c70-8520-70610b1be252" name="clients-post-wms-blueyonder-service-api"/>
+		<choice doc:name="Choice" doc:id="bef317b1-64e5-4835-8689-b914ca6069b8">
+			<when expression='#[attributes.queryParams.customer_name == "ISSSTE"]'>
+				<flow-ref doc:name="orchestrators-post-article-by-Sub_Flow" doc:id="6597f835-d72e-480e-8ea2-7216d7e743c8" name="orchestrators-post-article-by-Sub_Flow" />
+			</when>
+			<when expression='#[attributes.queryParams.customer_name == "MEGA"]'>
+				<flow-ref doc:name="orchestrators-post-article-mega-Sub_Flow" doc:id="29d6eb43-4499-46fa-ae2f-61f67f3775b7" name="orchestrators-post-article-mega-Sub_Flow" />
+			</when>
+		</choice>
 		<flow-ref doc:name="Call to clients-wms-blueyonder-set-response" doc:id="65a18fd2-7104-47a3-8929-623747a44db6" name="clients-wms-blueyonder-set-response"/>
 <!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]"/> [STUDIO] -->
+	</sub-flow>
+	<sub-flow name="orchestrators-update-order-by" doc:id="2defd914-22fa-4a1b-ac26-24f5b7a3ac43" >
+		<flow-ref doc:name="Call to clients-wms-blueyonder-request-login" doc:id="e9022368-0f31-433b-b511-bca4c17fdfec" name="clients-wms-blueyonder-request-login" />
+		<flow-ref doc:name="Call clients-post-wms-blueyonder-login-api" doc:id="f4716c17-f321-44e7-81c3-75d13cd52ff8" name="clients-post-wms-blueyonder-login-api" target="loginResponse" />
+		<flow-ref doc:name="Call to clients-post-wms-blueyonder-service-api" doc:id="0263c610-9373-4588-b5fe-8844de454b67" name="clients-post-wms-blueyonder-service-api" />
+	</sub-flow>
+	<sub-flow name="orchestrators-update-order-mega" doc:id="2bb19143-0814-4a6c-9278-518b8f28b81b" >
+		<flow-ref doc:name="clients-wms-mega-request-login" doc:id="3c9c540f-2c6e-435f-875e-471ed712d4c9" name="clients-wms-mega-request-login" />
+		<flow-ref doc:name="clients-post-wms-mega-login-api" doc:id="eb5236c8-e373-4b0d-b258-ae59112109c0" name="clients-post-wms-mega-login-api" target="loginResponse" />
+		<flow-ref doc:name="clients-post-wms-mega-service-api" doc:id="96e681ef-5a9e-424a-988d-32ad973f78b2" name="clients-post-wms-mega-service-api" />
 	</sub-flow>
 </mule>

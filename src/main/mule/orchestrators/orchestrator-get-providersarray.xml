@@ -10,8 +10,9 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 			</ee:message>
 			<ee:variables>
 				<ee:set-variable variableName="query"><![CDATA[%dw 2.0
+import modules::pharma
 output application/json
-var schema = p('database.wms.blueyonder.schema')
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 ---
 "SELECT
     supm.supnum,
@@ -26,7 +27,7 @@ WHERE
 			</ee:variables>
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="f0d22440-fb97-4e86-b4a3-860f125ea2c6" message="#[vars.query]"/>
-		<flow-ref doc:name="client-db-wms-get-providers-array" doc:id="e0f21dea-2107-45dd-b8b6-1fc9b721ecff" name="client-db-wms-get-providers-array"/>
+		<flow-ref doc:name="client-db-get-providers-array" doc:id="e3171ede-982a-48df-9ae3-43286e42b317" name="common-pharma-selectSub_Flow" />
 		<ee:transform doc:name="Transform Message" doc:id="02f8111c-6218-46e5-9ed8-d7aa1fd1f3b6" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
