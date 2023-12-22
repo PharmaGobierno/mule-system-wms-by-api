@@ -159,6 +159,12 @@ var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database
                 ord_line.load_attr3_cfg,
                 ord_line.load_attr4_cfg,
                 ord_line.load_attr5_cfg"]]></ee:set-variable>
+				<ee:set-variable variableName="inputParams" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	orderNumber: attributes.queryParams.order_number
+}]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="client-db-get-lines" doc:id="a1f71c6e-0f7e-415b-a397-6d977db0ee43" name="common-pharma-selectSub_Flow" />

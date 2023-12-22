@@ -7,6 +7,7 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 	<sub-flow name="client-db-mega-select" doc:id="8cf9afc6-58b3-49d5-9ae7-8f8d694bb829" >
 		<db:select doc:name="Select" doc:id="efda0571-bb4f-4dc0-becb-413ac6981664" config-ref="Database_Config_WMS_Mega">
 			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
+			<db:input-parameters ><![CDATA[#[vars.inputParams]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
 </mule>
