@@ -8,16 +8,18 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 <!-- [STUDIO:"Payload"]		<logger level="INFO" doc:name="Payload" doc:id="4153579e-e855-471f-bd59-07630cedd630" message="payloadXML: #[payload] " /> [STUDIO] -->
 		<ee:transform doc:name="get Shipment" doc:id="c7a34687-61f3-4324-b958-cd1dcfbd1680" >
 			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-payload.shipment]]></ee:set-payload>
 			</ee:message>
 			<ee:variables >
 				<ee:set-variable variableName="arrayAux" ><![CDATA[%dw 2.0
 output application/json
 ---
 []]]></ee:set-variable>
+				<ee:set-variable variableName="inputParams" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	shipment: payload.shipment	
+}]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<ee:transform doc:name="Set Query" doc:id="aae1a8fe-a1bb-4149-ac54-50b5330318e1" >
