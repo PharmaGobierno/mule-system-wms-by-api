@@ -129,7 +129,6 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 	</sub-flow>
 	<sub-flow name="client-db-wms-select" doc:id="b4a49d1a-dcb0-43ad-a710-9197cecf2276" >
 		<db:select doc:name="Select" doc:id="1a1be8ca-d31b-4c1f-bd30-4c01493a55de" config-ref="Database_Config_WMS_BlueYonder" fetchSize="1000" maxRows="100000" >
-			<non-repeatable-iterable />
 			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
 			<db:input-parameters ><![CDATA[#[vars.inputParams]]]></db:input-parameters>
 		</db:select>
