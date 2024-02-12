@@ -16,4 +16,17 @@
 			</otherwise>
 		</choice>
 	</sub-flow>
+	<sub-flow name="common-mega" doc:id="d69489af-949e-4c89-b742-88b001660f6b" >
+		<choice doc:name="Choice" doc:id="1dac3a75-0ff0-4320-908d-12a4083bb664" >
+			<when expression='#[attributes.queryParams.customer_name == "ISSSTE"]' >
+				<flow-ref doc:name="Call-client-db-wms-get-inventory" doc:id="da746b17-3882-4223-8a4b-6ff2b89a5f35" name="client-db-wms-get-inventory" />
+			</when>
+			<when expression='#[attributes.queryParams.customer_name == "MEGA"]' >
+				<flow-ref doc:name="Call-client-db-mega-select" doc:id="3d2b8bcf-d91f-4b7a-8eb2-9b079e55ae1d" name="client-db-mega-select" />
+			</when>
+			<otherwise >
+				<flow-ref doc:name="Call-client-db-wms-select" doc:id="fe0f5550-5d59-4cde-8cee-38c63b4ea255" name="client-db-wms-select" />
+			</otherwise>
+		</choice>
+	</sub-flow>
 </mule>

@@ -124,7 +124,8 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 	<sub-flow name="client-db-wms-get-inventory" doc:id="fdeab77f-f316-41ed-b7ba-3ea588f4c385" >
 		<db:select doc:name="Select" doc:id="c9ac94f8-0954-4554-9e70-dc8c772f0656" config-ref="Database_Config_WMS_BlueYonder" fetchSize="1000" maxRows="100000">
 			<non-repeatable-iterable />
-			<db:sql ><![CDATA[#[vars.queryInventory]]]></db:sql>
+			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
+			<db:input-parameters ><![CDATA[#[vars.inputParams]]]></db:input-parameters>
 		</db:select>
 	</sub-flow>
 	<sub-flow name="client-db-wms-select" doc:id="b4a49d1a-dcb0-43ad-a710-9197cecf2276" >
