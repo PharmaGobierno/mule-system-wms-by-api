@@ -149,25 +149,6 @@ output application/json
                     </ee:variables>
                 </ee:transform>
             </on-error-propagate>
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="3537fe6c-b20b-491b-9a0e-663eb2a3a5ce" type="HTTP:BAD_REQUEST">
-				<ee:transform doc:name="Transform Message" doc:id="6f97c9ed-a2e8-4fef-9773-b6970aa3097d" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-{
-  "traxion_response": {
-    "completed_succesfully": false,
-    "error": {
-      "error_type": error.errorType.namespace ++ ": " ++ error.muleMessage.typedAttributes.statusCode,
-      "system_error_description": error.muleMessage.typedValue,
-      "user_error_description": error.description
-    }
-  }
-}]]></ee:set-payload>
-					</ee:message>
-				</ee:transform>
-			</on-error-propagate>
 			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="9ef3e267-0653-4e53-954a-eb12314057fe" type="ANY">
 				<ee:transform doc:name="Transform Message" doc:id="9d19b0e7-fe21-4085-badb-3f3af6599792">
 					<ee:message>
