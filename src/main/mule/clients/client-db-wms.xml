@@ -91,10 +91,7 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-splits" doc:id="b14e2919-7371-4336-90d8-fd8b5c30c190" >
 				<db:select doc:name="Select" doc:id="b224d6c1-bc0a-4f1e-b4e3-06d2151f4e34" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.querySplitNumber]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
-	orderNumber: attributes.queryParams.order_number
-}]]]></db:input-parameters>
+			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
 		</db:select>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-split-validation" doc:id="644dccb6-4c41-4191-a934-66e0f640d475" >
