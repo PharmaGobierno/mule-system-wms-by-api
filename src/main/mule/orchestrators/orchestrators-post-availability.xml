@@ -143,6 +143,7 @@ pcks AS
 	WHERE pckwrk_dtl.appqty < pckwrk_hdr.pckqty
 		AND pckwrk_hdr.wrktyp = 'P'
 		AND pckwrk_hdr.invsts = 'DISP'
+		AND pckwrk_hdr.pcksts not in ('C')
 		AND pckwrk_hdr.srcare NOT IN
 		(
 			SELECT *
