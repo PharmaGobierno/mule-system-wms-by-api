@@ -18,6 +18,8 @@ var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database
                 shipment.host_client_id host_client_id,
                 shipment_line.ship_id ship_id,
                 shipment_line.ordnum ordnum,
+                shipment.doc_num pedidoSF,
+                 adrmst.host_ext_id UMU,
                 shipment_line.ordlin ordlin,
                 shipment_line.ordsln ordsln,
                 ord_line.prtnum prtnum,
@@ -87,6 +89,7 @@ var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database
                 ord_line.load_attr4_cfg,
                 ord_line.load_attr5_cfg
            from "++ schema ++".shipment,
+                "++ schema ++".adrmst ,
                 "++ schema ++".pckwrk_view,
                 "++ schema ++".ord,
                 "++ schema ++".shipment_line,
@@ -95,6 +98,7 @@ var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database
            join "++ schema ++".alloc_rule_hdr rulhdr
              on rulhdr.rule_nam = ord_line.rule_nam
             and rulhdr.wh_id = ord_line.wh_id
+  
           where shipment.ship_id = shipment_line.ship_id
           	and pckwrk_view.wrktyp = 'P' 
             and pckwrk_view.ship_line_id = shipment_line.ship_line_id
@@ -106,8 +110,12 @@ var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database
             and ord_line.ordlin = shipment_line.ordlin
             and ord_line.ordsln = shipment_line.ordsln
             and ord_line.wh_id = shipment_line.wh_id
+            and  shipment.rt_adr_id  = adrmst.adr_id
             and ord.ordnum = :orderNumber
           group by shipment.host_ext_id,
+          shipment.rt_adr_id,
+           adrmst.HOST_EXT_ID ,
+                shipment.doc_num,
                 shipment.host_client_id,
                 shipment_line.ship_id,
                 shipment_line.ordnum,
@@ -174,11 +182,13 @@ output application/java
 output application/json
 ---
 {
-    "order_number": payload.ordnum[0],
-    "skus": payload map
+    order_number: payload.ORDNUM[0],
+    order_umu: payload.UMU[0],
+    pedido_id: payload.PEDIDOSF[0] default "",
+    skus: payload map
         {
-            "sku": $.prtnum,
-            "quantity": $.comqty
+            sku: $.PRTNUM,
+            quantity: $.COMQTY
         }
     
 }]]></ee:set-payload>
