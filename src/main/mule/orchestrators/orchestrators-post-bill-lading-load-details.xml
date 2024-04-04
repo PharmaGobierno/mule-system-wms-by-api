@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrators-bill-lading-load-details" doc:id="9de8a181-03dc-4282-8646-dec20083d7c8" >
+<!-- [STUDIO:"Payload"]		<logger level="INFO" doc:name="Payload" doc:id="4153579e-e855-471f-bd59-07630cedd630" message="payloadXML: #[payload] " /> [STUDIO] -->
+		<ee:transform doc:name="get Load" doc:id="c7a34687-61f3-4324-b958-cd1dcfbd1680" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="arrayAux" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+				<ee:set-variable variableName="inputParams" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	load: payload.load	
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Set Query" doc:id="aae1a8fe-a1bb-4149-ac54-50b5330318e1" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
+output application/json
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
+---
+"SELECT car_move.CAR_MOVE_ID carga
+,trlr.trlr_id equipo_transporte_id
+, trlr.dispatch_dte fecha_despacho
+,shipment.ship_id  envio
+,ord.ordnum orden
+,ord_line.ordlin linea
+,all_inventory_view.prtnum 
+,prtdsc.lngdsc                                 descripcion
+,sum (all_inventory_view.untqty) cantidades
+,shipment_line.pckgr1  monto
+,altprt_sat.alt_prtnum clavesat
+,decode(prtmst.hazmat_flg, 0, 'NO', 'SI')      peligroso,
+prtmst.ltlcls                                 clave_peligroso
+,sum (prtftp_dtl.grswgt * all_inventory_view.untqty )pesoxarticulo
+FROM  
+"++ schema ++".car_move 
+LEFT JOIN "++ schema ++".trlr ON car_move.trlr_id = trlr.trlr_id
+                       AND trlr.trlr_cod = 'SHIP'
+JOIN "++ schema ++".stop ON  stop.car_move_id = car_move.car_move_id
+JOIN "++ schema ++".shipment ON  shipment.stop_id = stop.stop_id 
+                           AND  shipment.shpsts <> 'B'                   
+JOIN "++ schema ++".shipment_line ON shipment.ship_id = shipment_line.ship_id
+                                AND  shipment.wh_id = shipment_line.wh_id
+                                AND shipment_line.linsts <> 'B'
+LEFT JOIN "++ schema ++".all_inventory_view ON shipment_line.ship_line_id = all_inventory_view.ship_line_id and  trlr.trlr_id = all_inventory_view.stoloc
+JOIN "++ schema ++".ord_line ON shipment_line.ordnum = ord_line.ordnum
+                                AND shipment_line.ordlin = ord_line.ordlin
+                                AND shipment_line.wh_id = ord_line.wh_id
+                                AND shipment_line.client_id = ord_line.client_id
+JOIN "++ schema ++".ord ON ord.ordnum = ord_line.ordnum
+                           AND ord.wh_id = ord_line.wh_id
+                           AND ord.client_id = ord_line.client_id
+  JOIN "++ schema ++".prtmst ON all_inventory_view.prtnum = prtmst.prtnum
+                              AND all_inventory_view.prt_client_id = prtmst.prt_client_id
+                              AND prtmst.wh_id_tmpl = 'AVIOR-27'
+
+LEFT JOIN "++ schema ++".alt_prtmst altprt_sat ON all_inventory_view.prtnum = altprt_sat.prtnum
+                                             AND all_inventory_view.prt_client_id = altprt_sat.prt_client_id
+                                             AND altprt_sat.alt_prt_typ = 'SAT'
+
+    /* Huella pieza */
+
+LEFT JOIN "++ schema ++".prtftp_dtl ON all_inventory_view.wh_id = prtftp_dtl.wh_id
+                                  AND all_inventory_view.prtnum = prtftp_dtl.prtnum
+                                  AND all_inventory_view.ftpcod = prtftp_dtl.ftpcod
+                                  AND prtftp_dtl.uomlvl = 0
+LEFT JOIN "++ schema ++".prtdsc ON prtdsc.colnam = 'prtnum|prt_client_id|wh_id_tmpl'
+                              AND prtdsc.colval = all_inventory_view.prtnum
+                                                  || '|'
+                                                  || all_inventory_view.prt_client_id
+                                                  || '|'
+                                                  || all_inventory_view.wh_id
+WHERE 1=1
+and car_move.CAR_MOVE_ID = :load
+GROUP BY car_move.CAR_MOVE_ID
+,trlr.trlr_id 
+, trlr.dispatch_dte
+,shipment.ship_id 
+,ord.ordnum
+,ord_line.ordlin
+,all_inventory_view.prtnum 
+,prtdsc.lngdsc
+,shipment_line.pckgr1  
+,altprt_sat.alt_prtnum 
+,prtmst.hazmat_flg
+,prtmst.ltlcls
+,prtftp_dtl.grswgt"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Call to client-db-get-partfoot-details" doc:id="cdacba5c-3ac4-49f5-90d1-7128299ec81c" name="common-pharma-selectSub_Flow" />
+		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="to Json" doc:id="25d92b1d-53c1-4ae1-bd5a-41c9cd363b5f" />
+<!-- [STUDIO:"Response"]		<logger level="INFO" doc:name="Response" doc:id="30ca8b17-36de-42c8-800e-d90959eae24f" message="Response XML: #[payload]" /> [STUDIO] -->
+	</sub-flow>
+</mule>

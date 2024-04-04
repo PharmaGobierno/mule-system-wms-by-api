@@ -3,7 +3,7 @@
     <http:listener-config name="system-wms-by-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS" tlsContext="TLS_Context" />
     </http:listener-config>
-    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.38:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.40:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="system-wms-by-api-main">
         <http:listener config-ref="system-wms-by-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -149,10 +149,10 @@ output application/json
                     </ee:variables>
                 </ee:transform>
             </on-error-propagate>
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="9ef3e267-0653-4e53-954a-eb12314057fe" type="ANY">
-				<ee:transform doc:name="Transform Message" doc:id="9d19b0e7-fe21-4085-badb-3f3af6599792">
-					<ee:message>
-						<ee:set-payload><![CDATA[%dw 2.0
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="9ef3e267-0653-4e53-954a-eb12314057fe" type="ANY">
+                <ee:transform doc:name="Transform Message" doc:id="9d19b0e7-fe21-4085-badb-3f3af6599792">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -166,12 +166,12 @@ output application/json
     }
   }
 }]]></ee:set-payload>
-					</ee:message>
-					<ee:variables>
-						<ee:set-variable variableName="httpStatus"><![CDATA[500]]></ee:set-variable>
-					</ee:variables>
-				</ee:transform>
-			</on-error-propagate>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[500]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
         </error-handler>
     </flow>
     <flow name="system-wms-by-api-console">
@@ -297,6 +297,9 @@ output application/json
         <flow-ref doc:name="orchestrator-get-provider" doc:id="6f79b76e-80b1-4d9c-9752-5441d71798c8" name="orchestrator-get-providersarray" />
     </flow>
     <flow name="get:\wms\inventory:system-wms-by-api-config">
-		<flow-ref doc:name="call orchestrator-get-inventory-report" doc:id="60b39018-c7ab-4979-98be-0852e4421fad" name="orchestrator-get-inventory-report"/>
+        <flow-ref doc:name="call orchestrator-get-inventory-report" doc:id="60b39018-c7ab-4979-98be-0852e4421fad" name="orchestrator-get-inventory-report" />
+    </flow>
+    <flow name="post:\wms\bill_lading_details\load:application\json:system-wms-by-api-config">
+        <flow-ref doc:name="Call to orchestrators-bill-lading-load-details" doc:id="620bef03-3c02-4163-8d93-efa99aca1958" name="orchestrators-bill-lading-load-details" />
     </flow>
 </mule>
