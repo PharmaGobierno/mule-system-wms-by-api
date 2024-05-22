@@ -13,7 +13,7 @@ http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/
 	<http:request-config name="Request_AWS_BlueYonder" doc:name="HTTP Request configuration" doc:id="f77dbbb1-bc5f-4065-aae2-52edd47dd3db" responseTimeout="${client.wms.blueyonder.https.response.timeout}">
 		<http:request-connection host="${client.wms.blueyonder.https.host}" port="${client.wms.blueyonder.https.port}" connectionIdleTimeout="${client.wms.blueyonder.https.connection.idle.timeout}" maxConnections="${client.wms.blueyonder.https.max.connections}" protocol="HTTPS">
 			<tls:context >
-				<tls:trust-store path="traxion-global" type="jks" password="Tr@xion123"/>
+				<tls:trust-store path="traxion-global" type="jks" password="Tr@xion123" insecure="true"/>
 			</tls:context>
 		</http:request-connection>
 	</http:request-config>
@@ -23,7 +23,7 @@ http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/
 	<http:request-config name="Request_AWS_Mega" doc:name="HTTP Request configuration" doc:id="14527004-92a1-4010-9c3a-13396f9b5a05" responseTimeout="${client.wms.mega.https.response.timeout}">
 		<http:request-connection host="${client.wms.mega.https.host}" port="${client.wms.mega.https.port}" connectionIdleTimeout="${client.wms.mega.https.connection.idle.timeout}" maxConnections="${client.wms.mega.https.max.connections}" protocol="HTTPS">
 			<tls:context >
-				<tls:trust-store path="traxion_global.jks" type="jks" password="Tr@xion123"/>
+				<tls:trust-store path="traxion-global" type="jks" password="Tr@xion123" insecure="true"/>
 			</tls:context>
 		</http:request-connection>
 	</http:request-config>
