@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrator-get-charge-id-validation" doc:id="0dbd9a7a-8cc8-4f89-b159-fd35fd9d787b" >
+		<ee:transform doc:name="Set query" doc:id="ab248595-817f-4de3-b5b1-4923a0956b01" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+output application/json
+var schema = Mule::p('database.wms.blueyonder.schema')
+---
+"select
+     trlr.trlr_id trailer_id,
+     car_move.car_move_id as carga, 
+     trlr.trlr_stat as despacho,
+     car_move.wh_sts as carga_desp
+  from " ++ schema ++".car_move join " ++ schema ++".trlr on car_move.trlr_id = trlr.trlr_id
+  where  trlr.trlr_stat = :chargeId;"]]></ee:set-variable>
+				<ee:set-variable variableName="inputParams" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"chargeId": attributes.uriParams.chargeId
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Call-client-db-wms-select" doc:id="ff4b8a92-cf94-414d-8ca2-55bcbb9d190e" name="client-db-wms-select"/>
+		<ee:transform doc:name="Transform Message" doc:id="d8616702-2b28-48ff-8f97-09e891b31c45" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="85777a98-bc61-4ce5-9028-52fda4924a4b" message="#[payload]"/>
+	</sub-flow>
+</mule>
