@@ -19,7 +19,8 @@ var schema = Mule::p('database.wms.blueyonder.schema')
      trlr.trlr_stat as despacho,
      car_move.wh_sts as carga_desp
   from " ++ schema ++".car_move join " ++ schema ++".trlr on car_move.trlr_id = trlr.trlr_id
-  where  trlr.trlr_stat = :chargeId"]]></ee:set-variable>
+  where  trlr.trlr_stat = 'D'
+  and car_move.car_move_id = :chargeId"]]></ee:set-variable>
 				<ee:set-variable variableName="inputParams" ><![CDATA[%dw 2.0
 output application/java
 ---
