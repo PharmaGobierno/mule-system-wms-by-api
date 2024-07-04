@@ -29,26 +29,34 @@ import modules::pharma
 output application/json
 var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 ---
-"WITH area_excl AS
+"WITH
+claves AS
 (
-	SELECT DISTINCT poldat.rtstr1
-	FROM "++ schema ++".poldat
+
+SELECt prtnum clave from "++ schema ++".prtmst where 
+prtnum IN ("++ payload ++") 
+AND wh_id_tmpl= 'AVIOR-27' 
+
+),
+area_excl AS (
+	SELECT DISTINCT
+		poldat.rtstr1
+	FROM
+		"++ schema ++".poldat
 	WHERE
-		polcod = 'VAR-TRAXION'
+		    polcod = 'VAR-TRAXION'
 		AND polvar = 'QUERY_DISP'
 		AND polval = 'AREAS'
-),
-ubic_excl AS
-(
-	SELECT DISTINCT	poldat.rtstr1
-	FROM "++ schema ++".poldat
+), ubic_excl AS (
+	SELECT DISTINCT
+		poldat.rtstr1
+	FROM
+		"++ schema ++".poldat
 	WHERE
-		polcod = 'VAR-TRAXION'
+		    polcod = 'VAR-TRAXION'
 		AND polvar = 'QUERY_DISP'
 		AND polval = 'UBICACIONES'
-),
-inventario AS
-(
+), inventario AS (
 	SELECT
 		iv.wh_id,
 		SUM(iv.untqty) cantidad,
@@ -73,24 +81,29 @@ inventario AS
 		iv.prtnum clave,
 		iv.expire_dte expira,
 		iv.lotnum lote
-	FROM "++ schema ++".inventory_view iv
-	LEFT JOIN "++ schema ++".rcvlin rcvlin ON iv.rcvkey = rcvlin.rcvkey
-	LEFT JOIN "++ schema ++".rcvtrk rctk ON rcvlin.trknum = rctk.trknum
-	LEFT JOIN "++ schema ++".trlr trl ON rctk.trlr_id = trl.trlr_id
-	JOIN "++ schema ++".locmst ON iv.stoloc = locmst.stoloc
-	WHERE iv.invsts = ( 'DISP' )
-		AND ( trl.trlr_stat = 'D' OR trl.trlr_stat IS NULL )
+	FROM
+		"++ schema ++".inventory_view iv
+		LEFT JOIN "++ schema ++".rcvlin rcvlin ON iv.rcvkey = rcvlin.rcvkey
+		LEFT JOIN "++ schema ++".rcvtrk rctk ON rcvlin.trknum = rctk.trknum
+		LEFT JOIN "++ schema ++".trlr trl ON rctk.trlr_id = trl.trlr_id
+		JOIN "++ schema ++".locmst ON iv.stoloc = locmst.stoloc AND locmst.wh_id = 'AVIOR-27'
+	WHERE
+		    iv.invsts = ( 'DISP' )
+		AND ( trl.trlr_stat = 'D'
+		      OR trl.trlr_stat IS NULL )
 		AND iv.ship_line_id IS NULL
-		AND locmst.arecod NOT IN
-		(
-			SELECT *
-			FROM area_excl
+		AND locmst.arecod NOT IN (
+			SELECT
+				*
+			FROM
+				area_excl
 		)
 		AND iv.wh_id = 'AVIOR-27'
-		AND locmst.stoloc NOT IN
-		(
-			SELECT *
-			FROM ubic_excl
+		AND locmst.stoloc NOT IN (
+			SELECT
+				*
+			FROM
+				ubic_excl
 		)
 	GROUP BY
 		iv.wh_id,
@@ -103,58 +116,56 @@ inventario AS
 	ORDER BY
 		iv.expire_dte,
 		iv.lotnum
-),
-ords AS
-(
+), ords AS (
 	SELECT
 		ord_line.prtnum,
 		SUM(ord_line.ordqty) cant_comp
-	FROM "++ schema ++".ord_line
-	JOIN "++ schema ++".shipment_line
-		ON shipment_line.prtnum = ord_line.prtnum
-		AND shipment_line.wh_id = ord_line.wh_id
-		AND shipment_line.client_id = ord_line.client_id
-		AND shipment_line.ordnum = ord_line.ordnum
-		AND shipment_line.ordlin = ord_line.ordlin
-		AND shipment_line.ordsln = ord_line.ordsln
-		AND shipment_line.linsts != 'B'
+	FROM
+		     "++ schema ++".ord_line
+		JOIN "++ schema ++".shipment_line ON shipment_line.prtnum = ord_line.prtnum
+		                                     AND shipment_line.wh_id = ord_line.wh_id
+		                                     AND shipment_line.client_id = ord_line.client_id
+		                                     AND shipment_line.ordnum = ord_line.ordnum
+		                                     AND shipment_line.ordlin = ord_line.ordlin
+		                                     AND shipment_line.ordsln = ord_line.ordsln
+		                                     AND shipment_line.linsts != 'B'
 	WHERE
-		NOT EXISTS
-		(
-			SELECT null
-			FROM "++ schema ++".pckwrk_hdr
-				INNER JOIN "++ schema ++".pckwrk_dtl
-				ON pckwrk_dtl.wrkref = pckwrk_hdr.wrkref
-			WHERE pckwrk_hdr.wrktyp NOT IN ( 'M', 'T', 'G', 'E', 'R', 'D', 'S' )
+		NOT EXISTS (
+			SELECT
+				NULL
+			FROM
+				     "++ schema ++".pckwrk_hdr
+				INNER JOIN "++ schema ++".pckwrk_dtl ON pckwrk_dtl.wrkref = pckwrk_hdr.wrkref
+			WHERE
+				pckwrk_hdr.wrktyp NOT IN ( 'M', 'T', 'G', 'E', 'R',
+				                           'D', 'S' )
 				AND pckwrk_dtl.ordnum = ord_line.ordnum
 		)
 	GROUP BY
 		ord_line.prtnum
-),
-pcks AS
-(
+), pcks AS (
 	SELECT
 		pckwrk_hdr.prtnum,
 		pckwrk_hdr.ftpcod,
 		SUM(pckwrk_hdr.pckqty - pckwrk_dtl.appqty) pckqty
-	FROM "++ schema ++".pckwrk_hdr
-		INNER JOIN "++ schema ++".pckwrk_dtl
-		ON pckwrk_dtl.wrkref = pckwrk_hdr.wrkref
-	WHERE pckwrk_dtl.appqty < pckwrk_hdr.pckqty
+	FROM
+		     "++ schema ++".pckwrk_hdr
+		INNER JOIN "++ schema ++".pckwrk_dtl ON pckwrk_dtl.wrkref = pckwrk_hdr.wrkref
+	WHERE
+		    pckwrk_dtl.appqty < pckwrk_hdr.pckqty
 		AND pckwrk_hdr.wrktyp = 'P'
 		AND pckwrk_hdr.invsts = 'DISP'
-		AND pckwrk_hdr.pcksts not in ('C')
-		AND pckwrk_hdr.srcare NOT IN
-		(
-			SELECT *
-			FROM area_excl
+		AND pckwrk_hdr.pcksts NOT IN ( 'C' )
+		AND pckwrk_hdr.srcare NOT IN (
+			SELECT
+				*
+			FROM
+				area_excl
 		)
 	GROUP BY
 		pckwrk_hdr.prtnum,
 		pckwrk_hdr.ftpcod
-),
-prorrateo_pck AS
-(
+), prorrateo_pck AS (
 	SELECT
 		inventario.wh_id,
 		inventario.clave,
@@ -164,43 +175,39 @@ prorrateo_pck AS
 		inventario.lote,
 		inventario.expira,
 		inventario.ftpcod,
-		NVL(pcks.pckqty, 0) comp_pck,
+		nvl(pcks.pckqty, 0) comp_pck,
 		inventario.cantidad cant_inventario,
 		CASE
-			WHEN
-				--la suma del inventario del registro actual aún es menor o igual al total de la reserva
-				SUM(inventario.cantidad) OVER
-				(
-					PARTITION BY inventario.clave, inventario.ftpcod
-					ORDER BY inventario.expira, inventario.lote DESC
-					ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-				) <= NVL(pcks.pckqty, 0)
-			THEN inventario.cantidad --colocar la cantidad del inventario
-			ELSE
-				--asignar el valor máximo
-				GREATEST
-				(
-					--lo que faltaba por asignar en el registro anterior
-					NVL(pcks.pckqty, 0) -
-					NVL
-					(
-						SUM(inventario.cantidad) OVER
-						(
-							PARTITION BY inventario.clave, inventario.ftpcod
-							ORDER BY inventario.expira, inventario.lote DESC
-							ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-						),
-						0
-					),
-					0 --0 si la resta es negativa
-				)
+		    WHEN
+--la suma del inventario del registro actual aún es menor o igual al total de la reserva
+		     SUM(inventario.cantidad)
+		         OVER(PARTITION BY inventario.clave, inventario.ftpcod
+		              ORDER BY
+				             inventario.expira, inventario.lote DESC
+			    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+		         ) <= nvl(pcks.pckqty, 0) THEN
+		        inventario.cantidad
+--colocar la cantidad del inventario
+		    ELSE
+--asignar el valor mÃ¡ximo
+		        greatest(
+	--lo que faltaba por asignar en el registro anterior
+		        nvl(pcks.pckqty, 0) - nvl(SUM(inventario.cantidad)
+		                                           OVER(PARTITION BY inventario.clave, inventario.ftpcod
+		                                                ORDER BY
+				                                               inventario.expira, inventario.lote DESC
+			        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+		                                           ),
+		                                           0),
+		                 0
+	--0 si la resta es negativa
+		                 )
 		END stock_asignado_pck
 	FROM
 		inventario
-		LEFT JOIN pcks ON pcks.prtnum = inventario.clave AND pcks.ftpcod = inventario.ftpcod
-),
-prorrateo_ord AS
-(
+		LEFT JOIN pcks ON pcks.prtnum = inventario.clave
+		                  AND pcks.ftpcod = inventario.ftpcod
+), prorrateo_ord AS (
 	SELECT
 		pp.wh_id,
 		pp.clave,
@@ -212,42 +219,38 @@ prorrateo_ord AS
 		pp.comp_pck,
 		pp.cant_inventario,
 		pp.stock_asignado_pck,
-		NVL(ords.cant_comp, 0) comp_ord,
+		nvl(ords.cant_comp, 0) comp_ord,
 		pp.cant_inventario - pp.stock_asignado_pck disponible_ord,
 		CASE
-			WHEN
-				--la suma del inventario del registro actual aún es menor o igual al total de la reserva
-				SUM(pp.cant_inventario - pp.stock_asignado_pck) OVER
-				(
-					PARTITION BY pp.clave
-					ORDER BY pp.expira, pp.lote DESC
-					ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-				) <= NVL(ords.cant_comp, 0)
-			THEN pp.cant_inventario - pp.stock_asignado_pck --colocar la cantidad del inventario
-			ELSE
-				--asignar el valor máximo
-				GREATEST
-				(
-					--lo que faltaba por asignar en el registro anterior
-					NVL(ords.cant_comp, 0) -
-					NVL
-					(
-						SUM(pp.cant_inventario - pp.stock_asignado_pck) OVER
-						(
-							PARTITION BY pp.clave
-							ORDER BY pp.expira, pp.lote DESC
-							ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-						),
-						0
-					),
-					0 --0 si la resta es negativa
-				)
+		    WHEN
+	--la suma del inventario del registro actual aÃºn es menor o igual al total de la reserva
+		     SUM(pp.cant_inventario - pp.stock_asignado_pck)
+		         OVER(PARTITION BY pp.clave
+		              ORDER BY
+				             pp.expira, pp.lote DESC
+			    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+		         ) <= nvl(ords.cant_comp, 0) THEN
+		        pp.cant_inventario - pp.stock_asignado_pck
+	--colocar la cantidad del inventario
+		    ELSE
+	--asignar el valor maximo
+		        greatest(
+		--lo que faltaba por asignar en el registro anterior
+		        nvl(ords.cant_comp, 0) - nvl(SUM(pp.cant_inventario - pp.stock_asignado_pck)
+		                                              OVER(PARTITION BY pp.clave
+		                                                   ORDER BY
+				                                                  pp.expira, pp.lote DESC
+			        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+		                                              ),
+		                                              0),
+		                 0
+		--0 si la resta es negativa
+		                 )
 		END stock_asignado_ord
-	FROM prorrateo_pck pp
+	FROM
+		prorrateo_pck pp
 		LEFT JOIN ords ON pp.clave = ords.prtnum
-),
-validacion AS
-(
+), validacion AS (
 	SELECT
 		wh_id,
 		clave,
@@ -263,8 +266,11 @@ validacion AS
 		disponible_ord,
 		stock_asignado_ord,
 		disponible_ord - stock_asignado_ord disponible_final
-	FROM prorrateo_ord
+	FROM
+		prorrateo_ord
 )
+
+
 SELECT
 	clave,
 	ftpcod,
@@ -274,18 +280,18 @@ SELECT
 	cantpzpck,
 	SUM(cant_inventario) cant_inv,
 	SUM(disponible_final) stock_disp,
-	ROUND(SUM(disponible_final) / cantpzpck) packdisp,
+	round(SUM(disponible_final) / cantpzpck) packdisp,
 	SUM(stock_asignado_pck + stock_asignado_ord) comprometido
 FROM
 	validacion
-WHERE clave IN (" ++ payload ++ ")
+WHERE 1=1
+	AND clave IN (" ++ payload ++ ")
 GROUP BY
 	ftpcod,
 	clave,
 	untcas,
 	paqueteo,
-	cantpzpck
-"]]></ee:set-variable>
+	cantpzpck"]]></ee:set-variable>
             </ee:variables>
         </ee:transform>
 		<flow-ref doc:name="Call to client-db-get-availability" doc:id="949a2585-01cb-44bd-983b-3394af2e1747" name="common-pharma-selectSub_Flow" />
