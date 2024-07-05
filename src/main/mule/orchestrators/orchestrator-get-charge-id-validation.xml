@@ -29,7 +29,7 @@ output application/java
 }]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<flow-ref doc:name="Call-client-db-wms-select" doc:id="ff4b8a92-cf94-414d-8ca2-55bcbb9d190e" name="client-db-wms-select"/>
+		<flow-ref doc:name="Call-orchestrator-get-charge-id-validation-customer-name" doc:id="ff4b8a92-cf94-414d-8ca2-55bcbb9d190e" name="orchestrator-get-charge-id-validation-customer-name"/>
 		<ee:transform doc:name="Transform Message" doc:id="d8616702-2b28-48ff-8f97-09e891b31c45" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -39,5 +39,18 @@ payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="85777a98-bc61-4ce5-9028-52fda4924a4b" message="#[payload]"/>
+	</sub-flow>
+	<sub-flow name="orchestrator-get-charge-id-validation-customer-name" doc:id="9eb8806c-a4a7-43da-8ec9-1eb34ccee942" >
+		<choice doc:name="Choice" doc:id="a3743727-570e-45cd-8652-df288980333f" >
+			<when expression='#[attributes.queryParams.customer_name == "ISSSTE"]'>
+				<flow-ref doc:name="Call-client-db-wms-select" doc:id="863ba8a7-2f09-4754-8689-4c0d7d1f8858" name="client-db-wms-select" />
+			</when>
+			<when expression='#[attributes.queryParams.customer_name == "MEGA"]'>
+				<flow-ref doc:name="Call-client-db-mega-select" doc:id="235bfb9d-0a51-4ed8-aa92-44d36ba49d70" name="client-db-mega-select"/>
+			</when>
+			<otherwise>
+				<flow-ref doc:name="Call-client-db-wms-select" doc:id="c89478e5-2263-4217-a55b-73afc7f5cd1f" name="client-db-wms-select" />
+			</otherwise>
+		</choice>
 	</sub-flow>
 </mule>
