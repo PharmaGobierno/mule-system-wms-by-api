@@ -130,6 +130,12 @@ where pv1.ordnum in (select distinct ordnum
                           from "++ schema ++".inventory_pckwrk_view ipv3
                          where lodnum = :lodnum)
     and ipv2.subnum like 'CTN%')"]]></ee:set-variable>
+				<ee:set-variable variableName="inputParams" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	lodnum: payload
+}]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="client-db-get-lpn-full" doc:id="f619373a-310e-459e-af52-6ba2372e3955" name="common-pharma-selectSub_Flow" />

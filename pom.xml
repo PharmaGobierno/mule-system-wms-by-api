@@ -33,7 +33,7 @@
 				<configuration>
 					<cloudHubDeployment>
 						<uri>https://anypoint.mulesoft.com</uri>
-				    	<businessGroupId>${businessGroupId}</businessGroupId>
+						<businessGroupId>${businessGroupId}</businessGroupId>
 						<muleVersion>${mule.version}</muleVersion>
 						<!-- <releaseChannel>EDGE</releaseChannel> -->
 						<!-- <username>${anypoint.username}</username>
@@ -186,7 +186,7 @@
 		<dependency>
 			<groupId>ab8117f6-d718-4307-b5f7-03262d589cd0</groupId>
 			<artifactId>system-wms-by-api</artifactId>
-			<version>1.0.41</version>
+			<version>1.0.44</version>
 			<classifier>raml</classifier>
 			<type>zip</type>
 		</dependency>
