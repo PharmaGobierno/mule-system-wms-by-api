@@ -726,6 +726,12 @@ var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database
 		and lodnum = :lodnum) controlado
 from
 	dual"]]></ee:set-variable>
+				<ee:set-variable variableName="inputParams" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	lodnum: payload.lodnum
+}]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="client-db-cajas-carton-order" doc:id="ba38981e-38a0-45e8-a520-684118e14564" name="common-pharma-selectSub_Flow" />
