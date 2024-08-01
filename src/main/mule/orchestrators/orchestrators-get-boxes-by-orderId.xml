@@ -730,7 +730,8 @@ from
 output application/java
 ---
 {
-	lodnum: payload.lodnum
+	lodnum: payload.lodnum,
+	wh_id: payload.wh_id
 }]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
