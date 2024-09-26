@@ -5,11 +5,11 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
 	<flow name="orchestrator-WMS-daily_balanceFlow" doc:id="d6bc97c8-7c4d-45a0-a01c-4fdf553e3624" >
-		<scheduler doc:name="Scheduler at 0am" doc:id="9988bb06-81d3-4340-8284-1f68ad937b0d" >
+		<!-- [STUDIO:"Scheduler at 0am"]<scheduler doc:name="Scheduler at 0am" doc:id="9988bb06-81d3-4340-8284-1f68ad937b0d" >
 			<scheduling-strategy >
 				<cron expression="0 0 6 ? * * *" />
 			</scheduling-strategy>
-		</scheduler>
+		</scheduler> [STUDIO] -->
 		<flow-ref doc:name="client-db-wms-daily-balance-sp" doc:id="7c2cc80b-c54a-4c8c-b717-99a1ed005a4b" name="client-db-wms-daily-balance-sp"/>
 	</flow>
 </mule>
