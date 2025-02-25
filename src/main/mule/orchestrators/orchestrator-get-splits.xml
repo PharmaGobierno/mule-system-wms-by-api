@@ -31,23 +31,27 @@ import modules::pharma
 output application/json
 var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
 ---
-"  WITH Enviados AS (
+"WITH Enviados AS (
     SELECT DISTINCT sl.ORDNUM ,COUNT(DISTINCT sl.SHIP_ID) AS ENVIOS
     FROM "++ schema ++".shipmenT_LINE sl
-    WHERE sl.ORDNUM in (" ++ payload ++ ")
+    WHERE   sl.ORDNUM in(" ++ payload ++ ")
+    and sl.wh_id = 'AVIOR-27' 
     GROUP BY ORDNUM
 ),
 Despachados AS (
-    SELECT COUNT(DISTINCT cm.car_move_id) AS DESPACHADOS
+    SELECT distinct shpl.ordnum ,  COUNT(distinct cm.car_move_id) AS DESPACHADOS
     FROM "++ schema ++".car_move cm
+    JOIN "++ schema ++".trlr tr on tr.trlr_id = cm.trlr_id
     JOIN "++ schema ++".stop st ON cm.car_move_id = st.car_move_id
     JOIN "++ schema ++".shipment shp ON st.stop_id = shp.stop_id
     JOIN "++ schema ++".shipmenT_LINE shpl ON shp.ship_id = shpl.ship_id
-    WHERE cm.wh_sts = 'WHCOMPLETE'
+    WHERE tr.trlr_stat = 'D'
+    AND  shpl.wh_id = 'AVIOR-27' 
     AND shpl.ORDNUM in (" ++ payload ++ ")
+    GROUP BY shpl.ORDNUM
 )
 SELECT  Enviados.ORDNUM, Enviados.ENVIOS, Despachados.DESPACHADOS
-FROM Enviados, Despachados"
+FROM Enviados join  Despachados on Enviados.ordnum = Despachados.ordnum"
 ]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
