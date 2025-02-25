@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+
+
+	<sub-flow name="orchestrator-get-split-sku-main" doc:id="5711de4d-66dc-48f5-b7dc-af0eaa03cb8d" >
+		<ee:transform doc:name="get Orders" doc:id="ee40fc6c-62e8-41fb-a9f4-0c045245e062">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+("'" ++((payload.orders) joinBy "," ) replace "," with("','") ++ "'")]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="arrayAux"><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Set Query" doc:id="2863251d-ecc3-4fc5-8cec-4375c6930c7e">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+import modules::pharma
+output application/json
+var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database.wms.blueyonder.schema'),p('database.wms.mega.schema'))
+---
+"select
+  to_char (
+    trlr.dispatch_dte,
+    'DD/MM/YYYY',
+    'NLS_DATE_LANGUAGE = spanish'
+  ) dispatch_dte,
+  car_move.car_move_id,
+  trlr.trlr_stat,
+  ord.ordnum,
+  shipment_line.prtnum,
+  ord.rtcust umu,
+  adrmst.web_adr nombre_umu,
+  adrmst.adrln1 || adrmst.adrln2 dir_umu,
+  shipment.ship_id,
+  all_inventory_view.lotnum as lot_number,
+  to_char (
+    all_inventory_view.expire_dte,
+    'DD/MM/YYYY',
+    'NLS_DATE_LANGUAGE = spanish'
+  ) as expiration_date,
+  SUM(
+    CASE
+      WHEN all_inventory_view.phyflg = 1
+      OR all_inventory_view.phyflg = '1'
+      OR all_inventory_view.phyflg = 0
+      OR all_inventory_view.phyflg = '0' THEN (all_inventory_view.untqty)
+      ELSE 0
+    END
+  ) AS shpqty,
+  ROUND(shipment_line.pckgr1, 2) as avg_cost,
+  all_inventory_view.wrkref,
+  all_inventory_view.wrkref_dtl
+from
+  "++ schema ++".shipment_line
+  join "++ schema ++".shipment on shipment.ship_id = shipment_line.ship_id
+  and shipment.wh_id = shipment_line.wh_id
+  join "++ schema ++".stop on stop.stop_id = shipment.stop_id
+  join "++ schema ++".car_move on car_move.car_move_id = stop.car_move_id
+  left join "++ schema ++".trlr on trlr.trlr_id = car_move.trlr_id
+  and trlr.carcod = car_move.carcod
+  join "++ schema ++".ord on ord.ordnum = shipment_line.ordnum
+  and ord.wh_id = shipment_line.wh_id
+  join "++ schema ++".adrmst on adrmst.adr_id = ord.rt_adr_id
+  join "++ schema ++".all_inventory_view on all_inventory_view.prtnum = shipment_line.prtnum
+  and all_inventory_view.prt_client_id = shipment_line.prt_client_id
+  and all_inventory_view.ship_line_id = shipment_line.ship_line_id
+  join "++ schema ++".prtmst on prtmst.prtnum = shipment_line.prtnum
+  and prtmst.prt_client_id = shipment_line.prt_client_id
+  and prtmst.wh_id_tmpl = shipment_line.wh_id
+where
+  shipment_line.wh_id = 'AVIOR-27'
+  -- and trlr.trlr_stat = 'D'
+  and ord.ordnum in (" ++ payload ++ ")
+group by
+  trlr.dispatch_dte,
+  to_char (
+    trlr.dispatch_dte,
+    'DD/MM/YYYY',
+    'NLS_DATE_LANGUAGE = spanish'
+  ),
+  car_move.car_move_id,
+  trlr.trlr_stat,
+  ord.ordnum,
+  shipment_line.prtnum,
+  ord.rtcust,
+  adrmst.web_adr,
+  adrmst.adrln1 || adrmst.adrln2,
+  shipment.ship_id,
+  all_inventory_view.lotnum,
+  all_inventory_view.expire_dte,
+  all_inventory_view.wrkref,
+  all_inventory_view.wrkref_dtl,
+  all_inventory_view.inv_attr_str2,
+  shipment_line.pckgr1
+order by
+  trlr.dispatch_dte asc"
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Call to client-db-get-split-validation" doc:id="c3678c27-a1ce-40d1-8e80-1cca63b27147" name="common-pharma-selectSub_Flow" />
+		<ee:transform doc:name="Transform Message" doc:id="a844eda6-9a3e-42aa-bc32-8417d7881a4b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>
+	

@@ -3,7 +3,7 @@
     <http:listener-config name="system-wms-by-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS" tlsContext="TLS_Context" />
     </http:listener-config>
-    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.44:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="system-wms-by-api-config" api="resource::ab8117f6-d718-4307-b5f7-03262d589cd0:system-wms-by-api:1.0.48:raml:zip:system-wms-by-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="system-wms-by-api-main">
         <http:listener config-ref="system-wms-by-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -309,5 +309,8 @@ output application/json
             </ee:variables>
         </ee:transform>
         <flow-ref doc:name="Call-orchestrator-get-charge-id-validation" doc:id="451b5de1-5196-4763-95ac-ebd4e5491278" name="orchestrator-get-charge-id-validation" />
+    </flow>
+    <flow name="post:\wms\order\split\sku:application\json:system-wms-by-api-config">
+		<flow-ref doc:name="orchestrator-get-split-sku-main" doc:id="98198d51-d2f6-44da-b86e-24538718f518" name="orchestrator-get-split-sku-main" />
     </flow>
 </mule>
