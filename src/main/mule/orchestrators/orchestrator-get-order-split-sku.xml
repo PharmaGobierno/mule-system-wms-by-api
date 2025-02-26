@@ -59,24 +59,24 @@ var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database
     all_inventory_view.wrkref_dtl,
     all_inventory_view.dtlnum
 FROM
-         "++ schema ++"..shipment_line
-    JOIN "++ schema ++"..shipment ON shipment.ship_id = shipment_line.ship_id
+         " ++ schema ++".shipment_line
+    JOIN " ++ schema ++".shipment ON shipment.ship_id = shipment_line.ship_id
                                AND shipment.wh_id = shipment_line.wh_id
-    JOIN "++ schema ++"..stop ON stop.stop_id = shipment.stop_id
-    JOIN "++ schema ++"..car_move ON car_move.car_move_id = stop.car_move_id
-    LEFT JOIN "++ schema ++"..trlr ON trlr.trlr_id = car_move.trlr_id
+    JOIN " ++ schema ++".stop ON stop.stop_id = shipment.stop_id
+    JOIN " ++ schema ++".car_move ON car_move.car_move_id = stop.car_move_id
+    LEFT JOIN " ++ schema ++".trlr ON trlr.trlr_id = car_move.trlr_id
                                 AND trlr.carcod = car_move.carcod
-    JOIN "++ schema ++"..ord ON ord.ordnum = shipment_line.ordnum
+    JOIN " ++ schema ++".ord ON ord.ordnum = shipment_line.ordnum
                           AND ord.wh_id = shipment_line.wh_id
-    JOIN "++ schema ++"..adrmst adrmst ON adrmst.adr_id = ord.rt_adr_id
-    JOIN "++ schema ++"..all_inventory_view ON all_inventory_view.prtnum = shipment_line.prtnum
+    JOIN " ++ schema ++".adrmst adrmst ON adrmst.adr_id = ord.rt_adr_id
+    JOIN " ++ schema ++".all_inventory_view ON all_inventory_view.prtnum = shipment_line.prtnum
                                          AND all_inventory_view.prt_client_id = shipment_line.prt_client_id
                                          AND all_inventory_view.ship_line_id = shipment_line.ship_line_id
-    JOIN "++ schema ++"..prtmst ON prtmst.prtnum = shipment_line.prtnum
+    JOIN " ++ schema ++".prtmst ON prtmst.prtnum = shipment_line.prtnum
                              AND prtmst.prt_client_id = shipment_line.prt_client_id
                              AND prtmst.wh_id_tmpl = shipment_line.wh_id
-    LEFT JOIN "++ schema ++"..supmst ON supmst.supnum = all_inventory_view.supnum
-    LEFT JOIN "++ schema ++"..adrmst adrmst_sup ON adrmst_sup.adr_id = supmst.adr_id
+    LEFT JOIN " ++ schema ++".supmst ON supmst.supnum = all_inventory_view.supnum
+    LEFT JOIN " ++ schema ++".adrmst adrmst_sup ON adrmst_sup.adr_id = supmst.adr_id
                                              AND adrmst_sup.adrtyp = 'SUP'
 WHERE
         shipment_line.wh_id = 'AVIOR-27'
