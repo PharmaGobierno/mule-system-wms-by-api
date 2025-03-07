@@ -10,7 +10,8 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 				<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-("'" ++((payload.orders) joinBy "," ) replace "," with("','") ++ "'")]]></ee:set-payload>
+payload.orders[0]
+//("'" ++((payload.orders) joinBy "," ) replace "," with("','") ++ "'")]]></ee:set-payload>
 			</ee:message>
 			<ee:variables>
 				<ee:set-variable variableName="arrayAux"><![CDATA[%dw 2.0
@@ -34,7 +35,7 @@ var schema = pharma::getSchema(attributes.queryParams.customer_name, p('database
 "WITH Enviados AS (
     SELECT DISTINCT sl.ORDNUM ,COUNT(DISTINCT sl.SHIP_ID) AS ENVIOS
     FROM "++ schema ++".shipmenT_LINE sl
-    WHERE   sl.ORDNUM in(" ++ payload ++ ")
+    WHERE   sl.ORDNUM = '" ++ payload ++ "'
     and sl.wh_id = 'AVIOR-27' 
     GROUP BY ORDNUM
 ),
@@ -47,7 +48,7 @@ Despachados AS (
     JOIN "++ schema ++".shipmenT_LINE shpl ON shp.ship_id = shpl.ship_id
     WHERE tr.trlr_stat = 'D'
     AND  shpl.wh_id = 'AVIOR-27' 
-    AND shpl.ORDNUM in (" ++ payload ++ ")
+    AND shpl.ORDNUM = '" ++ payload ++ "'
     GROUP BY shpl.ORDNUM
 )
 SELECT  Enviados.ORDNUM, Enviados.ENVIOS, Despachados.DESPACHADOS
