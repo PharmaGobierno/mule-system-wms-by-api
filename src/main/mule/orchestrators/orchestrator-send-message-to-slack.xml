@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:slack="http://www.mulesoft.org/schema/mule/slack"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/slack http://www.mulesoft.org/schema/mule/slack/current/mule-slack.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<slack:config name="Slack_Connector_Config" doc:name="Slack Connector Config" doc:id="357c2cc6-03d0-4ce5-a8c1-acd31abe5ea0" >
+		<slack:slack-auth-connection baseUri="${slack.connection.base.uri}" tlsContext="TLS_Context">
+			<slack:oauth-authorization-code consumerKey="${slack.connection.client_id}" consumerSecret="${slack.connection.client_secret}" authorizationUrl="${slack.connection.authorization.url}" accessTokenUrl="${slack.connection.token.url}" scopes="${slack.connection.scopes}"/>
+			<slack:oauth-callback-config listenerConfig="system-wms-by-api-httpListenerConfig" callbackPath="${slack.connection.callback.path}" authorizePath="${slack.connection.authorize.path}" externalCallbackUrl="${slack.connection.external.callback.url}" />
+			<slack:oauth-store-config objectStore="Object_store_slack_connection" />
+		</slack:slack-auth-connection>
+	</slack:config>
+	<os:object-store name="Object_store_slack_connection" doc:name="Object store" doc:id="488bb067-a29f-474a-8f3f-ac6f288fd61c" maxEntries="10" expirationInterval="0" expirationIntervalUnit="DAYS" config-ref="ObjectStore_Config" entryTtlUnit="DAYS"/>
+	<os:config name="ObjectStore_Config" doc:name="ObjectStore Config" doc:id="7fb861fa-1442-4637-8b14-83843d9276d8" >
+		<os:connection >
+			<reconnection >
+				<reconnect-forever />
+			</reconnection>
+		</os:connection>
+	</os:config>
+	<sub-flow name="orchestrator-send-message-to-slack-main" doc:id="98143ef0-660c-4683-8241-5239f9e6118b" >
+		<async doc:name="Async" doc:id="423fb75c-2cc3-4b43-87de-797ac8ccce30" >
+			<flow-ref doc:name="orchestrator-send-message-to-slack-prepare-message" doc:id="691638d4-bf4d-4246-b8a3-209e8d0e6ae6" name="orchestrator-send-message-to-slack-prepare-message" />
+			<flow-ref doc:name="orchestrator-send-message-to-slack-push-message" doc:id="2a2bfa17-565e-41d3-b8a4-c2c53c2a8581" name="orchestrator-send-message-to-slack-push-message" />
+		</async>
+	</sub-flow>
+	<sub-flow name="orchestrator-send-message-to-slack-prepare-message" doc:id="346c6d3e-3338-4626-96c4-440ea49947c6" >
+		<ee:transform doc:name="Transform Message" doc:id="b83b5243-9277-4dbd-b013-90d71e783abc" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="sendToSlack" ><![CDATA[%dw 2.0
+output application/json
+ns ns2 http://ws.edifactwstraxion/
+---
+write(payload)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="orchestrator-send-message-to-slack-push-message" doc:id="d3bf1f47-cd13-455c-9dbf-368473c2a423" >
+		<try doc:name="Try" doc:id="3b01a135-b831-484d-ab36-48a9eab3309c" >
+			<slack:create-chatpost-message doc:name="Send Message" doc:id="33267964-5b81-4a13-98f5-369d71a9c85f" config-ref="Slack_Connector_Config" >
+				<slack:chatpost-message-content ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	"channel": vars.slackChannel,
+	"text": "`Critical!` <!channel> There was an error in system-shipments-> :luz_giratoria: "
+	++ "\n ---------------------------------------------------"
+	++ "\n `"++ vars.messageProvider ++"`"
+	++ "\n ---------------------------------------------------"
+	++ "\n Fecha y hora ->" ++ (now() >> "-06:00") as String
+	++ "\n" ++ (vars.sendToSlack)
+}]]]></slack:chatpost-message-content>
+			</slack:create-chatpost-message>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ed8b2382-a1e2-4351-8d5d-454c6ec51f29" >
+					<logger level="ERROR" doc:name="Logger" doc:id="da6c87c0-77a2-4dc3-b2cd-ac7faa755d8a" message="THIS SLACK ERROR DOES NOT AFFECT THE NORMAL PROCESS. ONLY THE MESSAGES DOES NOT ARRIVE TO SLACK. EVEN SO YOU HAVE TO REVIEW IT. #[error]" category="SLACK CONNECTIVITY." />
+				</on-error-continue>
+			</error-handler>
+		</try>
+	</sub-flow>
+</mule>

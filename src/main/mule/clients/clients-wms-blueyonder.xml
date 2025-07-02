@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="clients-wms-blueyonder-set-response" doc:id="f05b9d9a-cd8d-4391-a9e6-1788f6a3e682" >
 		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="Set Payload" doc:id="f1299591-ed88-4676-ba98-f1f864031db1" />
 	</sub-flow>
@@ -14,12 +15,114 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    &quot;usr_id&quot;: p('client.wms.blueyonder.https.path.login.user'),&#10;    &quot;password&quot;: p('client.wms.blueyonder.https.path.login.password')&#10;}]" doc:name="Request Login" doc:id="252342ad-5039-4081-917d-e868d85b21ad" variableName="requestLogin" />
 	</sub-flow>
 	<sub-flow name="clients-post-wms-blueyonder-login-api" doc:id="4d6a6107-8a69-4f5b-9cde-447612feffb7" >
-		<http:request method="POST" doc:name="Login" doc:id="5af2d855-7f39-42f4-b75c-e9e1245d4f2e" config-ref="Request_AWS_BlueYonder" path="${client.wms.blueyonder.https.path.login.post}">
-			<http:body ><![CDATA[#[vars.requestLogin]]]></http:body>
+		<try doc:name="Try" doc:id="c2e3cd9b-3c7e-43b2-9bd0-ee438c46f439" >
+			<http:request method="POST" doc:name="Login" doc:id="5af2d855-7f39-42f4-b75c-e9e1245d4f2e" config-ref="Request_AWS_BlueYonder" path="${client.wms.blueyonder.https.path.login.post}">
+			<http:body><![CDATA[#[vars.requestLogin]]]></http:body>
 		</http:request>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="2c587d83-67c0-4dd9-af5c-6db8b860a843" type="HTTP:CLIENT_SECURITY, HTTP:CONNECTIVITY, HTTP:FORBIDDEN, HTTP:RETRY_EXHAUSTED, HTTP:SECURITY, HTTP:SERVICE_UNAVAILABLE, HTTP:TIMEOUT, HTTP:UNAUTHORIZED" >
+					<ee:transform doc:name="Transform Message" doc:id="0a9f674f-fe99-47fd-a1a7-7bf31ec39840" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="07ace7e3-d8e4-47a8-a530-573d628e45f1" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="5c50f222-3bef-4676-ad4b-b44b130288b1" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="9648f281-e605-44dc-a8bf-5ab06d91805b" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="clients-post-wms-blueyonder-service-api" doc:id="d4f959b1-149b-4897-9198-9978d3b10360" >
-		<http:request method="POST" doc:name="Request WMS" doc:id="3158e7f0-3609-4faa-83f0-b39c74f28a10" config-ref="Request_AWS_BlueYonder" path="${client.wms.blueyonder.https.path.wms.post}">
+		<try doc:name="Try" doc:id="459b8780-c282-427c-bd80-c611e1e42684" >
+			<http:request method="POST" doc:name="Request WMS" doc:id="3158e7f0-3609-4faa-83f0-b39c74f28a10" config-ref="Request_AWS_BlueYonder" path="${client.wms.blueyonder.https.path.wms.post}">
 		</http:request>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="d3be727f-a146-400c-8613-a489eadc3096" type="HTTP:CLIENT_SECURITY, HTTP:CONNECTIVITY, HTTP:FORBIDDEN, HTTP:RETRY_EXHAUSTED, HTTP:SECURITY, HTTP:SERVICE_UNAVAILABLE, HTTP:TIMEOUT, HTTP:UNAUTHORIZED" >
+					<ee:transform doc:name="Transform Message" doc:id="81390232-4874-4e75-9466-7317689dc44f" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="00495aa9-4e38-48bc-a08c-3e9bc2450add" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="1d73b78e-f2e8-4668-8fe6-e2ac1bcda463" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="35a09843-0e47-413c-89be-fd22d848708e" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 </mule>

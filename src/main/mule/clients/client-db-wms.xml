@@ -1,134 +1,1053 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="client-db-wms-get-availability" doc:id="8cf9afc6-58b3-49d5-9ae7-8f8d694bb829" >
-		<db:select doc:name="Select" doc:id="efda0571-bb4f-4dc0-becb-413ac6981664" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.queryAvailability]]]></db:sql>
+		<try doc:name="Try" doc:id="36f7c089-da5a-4a57-aa12-5d28d07330ab" >
+			<db:select doc:name="Select" doc:id="efda0571-bb4f-4dc0-becb-413ac6981664" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.queryAvailability]]]></db:sql>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="104705a9-1134-402f-b6f6-c73f80c1cd28" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="3fef4d21-2cd2-41e0-aad0-f1d86e216602" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="7a473835-50f6-4dbe-b036-9f03fe5ff0dc" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="8e40bf5f-58d3-4c36-beb6-da9f97e66172" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="4334199f-a9c4-4823-ab17-268564ca6dd4" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-volumetry" doc:id="668624cb-11e6-4fec-82c9-18369b7a2669" >
-		<db:select doc:name="Select" doc:id="529895af-3d19-4897-b0bc-6f2a588a1af7" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.queryVolumetry]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
+		<try doc:name="Try" doc:id="2cbcd1b5-1540-4000-aa2c-e818e911c605" >
+			<db:select doc:name="Select" doc:id="529895af-3d19-4897-b0bc-6f2a588a1af7" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.queryVolumetry]]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
 	shipment:payload	
 }]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6f677c38-ccf2-42f2-922d-009212fe6923" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED">
+					<ee:transform doc:name="Transform Message" doc:id="a93dbfb4-0a91-40b8-be7f-8cb217aae0f0" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="d77e277e-6074-42ce-8d1b-97f2429aa23e" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="328fc4a7-6919-4463-bfe7-7493b57e6fe2" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="a43ce311-d0e8-4ab8-b5f3-1b6496332ce6" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-partfoot-details" doc:id="c504be1d-524e-4928-a87a-9dcb543e8e4b" >
-		<db:select doc:name="Select" doc:id="a2d5ad18-aaf6-40ec-b465-db5324a006a9" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.querypartFoot]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
+		<try doc:name="Try" doc:id="35cf08e5-5a91-41fa-ab69-aa5704a559c1" >
+			<db:select doc:name="Select" doc:id="a2d5ad18-aaf6-40ec-b465-db5324a006a9" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.querypartFoot]]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
 	shipment:payload
 }]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="7abcf8d1-b79a-4033-bd19-f7ee1865edc5" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="19d3bc99-3408-4fb7-aeca-7cb692cd1e64" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="3a29a98f-4053-4fb2-9634-2321035dc24c" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="578554d1-a078-4ba8-83e2-42edfad5ab5f" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="ac00128a-7f25-4b8a-bde0-de1cddd389dc" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-box-quantity" doc:id="0c31bbcd-70e6-4f4a-8546-188b92a19c4a" >
-		<db:select doc:name="Select" doc:id="99247b82-ec6d-40d6-9f8d-c8134d005366" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.queryBoxQuantity]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
+		<try doc:name="Try" doc:id="c7a1c175-0595-4c92-a9fa-baabee8585fb" >
+			<db:select doc:name="Select" doc:id="99247b82-ec6d-40d6-9f8d-c8134d005366" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.queryBoxQuantity]]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
 	shipment:payload
 }]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="8f11c61f-65d8-4f4f-b8b5-b75e6650ebfa" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="00f1ca22-5711-4e59-a984-f5a5a82b6c53" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="4c0c91ab-ff22-4b6c-b2ff-4340865e455e" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="8b73ee04-eedf-48eb-9e44-0657fe32941a" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="90778173-ae05-4466-a29a-39ab5ddba078" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-logistics-footprint" doc:id="1dea7a51-4674-4ad4-8e38-ff198bf66e3b" >
-		<db:select doc:name="Select" doc:id="4754006c-1203-46c8-8718-c781618ad286" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.queryLogisticFootprint]]]></db:sql>
+		<try doc:name="Try" doc:id="f87750ff-c26b-4848-ad73-9e8bdeaa26c0" >
+			<db:select doc:name="Select" doc:id="4754006c-1203-46c8-8718-c781618ad286" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.queryLogisticFootprint]]]></db:sql>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="cf5a1434-f969-4a5c-ab0a-5a6e897fc819" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="c7fae6c1-1fa7-44f0-820b-31c9417c1728" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="c3cbf056-266e-4841-bd8d-ffb95220b90f" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="d04194f5-cd49-4dd4-ac87-5f19cefcb914" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="af5f62cf-4216-4d13-83d0-113afbadf882" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-box" doc:id="0c31bbcd-70e6-4f4a-8546-188b92a19c4a" >
-		<db:select doc:name="Select" doc:id="f795c9d5-854c-424f-9313-820d5f45f012" config-ref="Database_Config_WMS_BlueYonder" >
-			<db:sql ><![CDATA[#[vars.getBox]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
+		<try doc:name="Try" doc:id="0abf3ec0-fdba-4b8e-9d58-cc00a16c5fb0" >
+			<db:select doc:name="Select" doc:id="f795c9d5-854c-424f-9313-820d5f45f012" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.getBox]]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
 	ordnum: payload
 }]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="231e37ba-809c-41cf-b07f-3d51aadad75a" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="eaae28db-a837-456e-ac84-a26ce0733a47" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="f6d810b4-47ce-47f9-a2c8-e1abd56f51ab" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="454701c3-db76-430c-a908-db053e8dd007" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="69830e3e-3f31-495e-99f6-992d85a4c9b2" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-lpn" doc:id="5aeb1db0-6d8d-472e-ad4a-678eca027890" >
-		<db:select doc:name="Select" doc:id="b95dd3ad-9484-442b-80d8-c93b9575a296" config-ref="Database_Config_WMS_BlueYonder" >
-			<db:sql ><![CDATA[#[vars.getLpn]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
+		<try doc:name="Try" doc:id="a01b7e75-0f83-4674-b35b-6d3c8d3086b3" >
+			<db:select doc:name="Select" doc:id="b95dd3ad-9484-442b-80d8-c93b9575a296" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.getLpn]]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
 	lodnum: payload
 }]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="3cf88354-df62-4429-b6b6-af2f90c554b1" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="2a68135c-c4fc-4b9c-80f3-b19e33d1270a" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="64e9a2b2-a350-42ce-821b-f4d34cdabd35" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="6922d0c4-e22a-4a95-9a81-5dbc286432f8" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="3ff07aa1-20f1-4443-b7f5-e996d3a19f08" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-lpn-full" doc:id="e880c21b-d96b-496f-9ac9-f12987aadf03" >
-		<db:select doc:name="Select" doc:id="125e980b-8bda-40a3-bcf4-df2aefa7a174" config-ref="Database_Config_WMS_BlueYonder" >
-			<db:sql ><![CDATA[#[vars.getLpnFull]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
+		<try doc:name="Try" doc:id="00db69b6-09a0-47c4-b15c-578175c3dbc3" >
+			<db:select doc:name="Select" doc:id="125e980b-8bda-40a3-bcf4-df2aefa7a174" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.getLpnFull]]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
 	lodnum: payload
 }]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="50d93325-605a-4d8b-b784-3ea3867f45b5" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="60ac7c3f-6402-426b-8694-ee727ca796d3" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="b3c81fdb-9e5d-4db8-9fe8-c0fcdaf98cf5" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="5c808099-074e-46c2-ac42-0d1da13aed3e" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="e801937c-e6f1-419e-8375-d9940c716d0d" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-cajas-carton-order" doc:id="fc8f171d-0403-4681-ad80-5949e75971de" >
-		<db:select doc:name="Select" doc:id="7ff12290-20a1-41fe-b693-5a795404c521" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.cartonOrder]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		<try doc:name="Try" doc:id="230b0e18-8c35-450b-a6a0-525e1de544d1" >
+			<db:select doc:name="Select" doc:id="7ff12290-20a1-41fe-b693-5a795404c521" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.cartonOrder]]]></db:sql>
+			<db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="15a61857-ddec-4b1f-9301-cf67968fc1cd" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="748b0317-2bdd-4a57-99a6-e5883e618ae4" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="c575eab2-e6ae-4c59-b149-e1307d6e3b52" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="f2009207-fab7-40b5-8857-fa74cbcf5aab" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="583b6560-46f0-43a7-9fb9-9e817b476012" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-download-sequence" doc:id="15cef186-5c0b-4b19-bd30-fd34144e7faa" >
-		<db:select doc:name="Select" doc:id="b72ccc08-b40d-464d-a750-8a93706f1e62" config-ref="Database_Config_WMS_BlueYonder" >
-			<db:sql ><![CDATA[#[vars.shStatus]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
+		<try doc:name="Try" doc:id="7e18c3d4-8fd8-4e48-bbc2-507d13dfbfdb" >
+			<db:select doc:name="Select" doc:id="b72ccc08-b40d-464d-a750-8a93706f1e62" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.shStatus]]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
 	downloadSequence: "%" ++ payload ++ "%"
 }]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ae85455e-44d3-428f-8ea8-603e7d7cf434" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="22686d17-2d9d-4b57-aa5f-719589f0a3c0" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="b48ab8f8-054b-4b00-a410-352f432a5c37" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="5f75cfe9-b452-4fc7-8604-cdbcdda9f77a" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="9d3ced9d-89d9-408d-8b50-5fc9c6d6dce5" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-daily-balance-sp" doc:id="65b13491-4f77-497b-8efe-62dd55b9ff04" >
-		<db:stored-procedure doc:name="Stored procedure" doc:id="908312f3-8c40-4271-9e46-d4e16dd6b4cd" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[{ call DAILY_INVENTORY_UPDATE }]]></db:sql>
+		<try doc:name="Try" doc:id="03be95e1-2c77-4880-89cc-80f57542606e" >
+			<db:stored-procedure doc:name="Stored procedure" doc:id="908312f3-8c40-4271-9e46-d4e16dd6b4cd" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[{ call DAILY_INVENTORY_UPDATE }]]></db:sql>
 		</db:stored-procedure>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="971ddc4a-53d0-488f-97dc-731881d6d0fe" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="2f57ba13-1c75-481c-b902-d9ad4bf27138" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="6a122d0c-4907-4426-9a81-29eb932dba43" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="4eed27e6-b03e-4bf3-8910-be418a11275d" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="85d29b1f-0611-41ef-86f2-67c29214c42e" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-lines" doc:id="2f725d7f-c922-4298-b06b-6c487491fd9c" >
-				<db:select doc:name="Select" doc:id="a0bcabc4-7acf-4670-aa81-836a69902a3e" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.getLines]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
+		<try doc:name="Try" doc:id="eda75d9e-fddf-4507-a57a-d1ddff0b997b" >
+			<db:select doc:name="Select" doc:id="a0bcabc4-7acf-4670-aa81-836a69902a3e" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.getLines]]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
 	orderNumber: attributes.queryParams.order_number
 }]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="c6f429ee-556e-4fa5-a423-e544085ec835" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="183b56f3-d6ab-4834-82d0-e400125f3239" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="c86790e7-9f34-40c1-b78f-30d9b31d69c3" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="0abee729-af19-4152-bb42-b5df03d7a909" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="dc83d43f-0209-4ac1-91d2-e913fd54184f" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-splits" doc:id="b14e2919-7371-4336-90d8-fd8b5c30c190" >
-				<db:select doc:name="Select" doc:id="b224d6c1-bc0a-4f1e-b4e3-06d2151f4e34" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
+		<try doc:name="Try" doc:id="1395bef6-7f71-4f6e-a314-080634d71cfb" >
+			<db:select doc:name="Select" doc:id="b224d6c1-bc0a-4f1e-b4e3-06d2151f4e34" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.query]]]></db:sql>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="bb552a70-2e02-43b8-9abd-44798ebf4541" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="b8793645-46fe-4822-af48-4259a5d25619" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="e373482c-733f-4111-a8d3-499c38a3d2c7" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="597eb1f3-54c2-417f-90cd-52a7ce82d71f" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="641f48c7-f71b-4559-bd68-3ad8271a80f4" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-split-validation" doc:id="644dccb6-4c41-4191-a934-66e0f640d475" >
-				<db:select doc:name="Select" doc:id="a9487ef7-289f-42d7-ac32-ad3e4efe0e1c" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.querySplitValidation]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
+		<try doc:name="Try" doc:id="6d5c2baa-50c4-4a15-8016-d07ec84d331c" >
+			<db:select doc:name="Select" doc:id="a9487ef7-289f-42d7-ac32-ad3e4efe0e1c" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.querySplitValidation]]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
 	orderNumber: attributes.queryParams.order_number
 }]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="4b29ef0b-137d-4d78-bc6f-2542f873e134" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="bf0ca8a1-d0e9-4f52-aa53-35d83503b236" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="ee83d3b9-0fe2-4862-b7f8-d6a43c260915" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="7baf61a6-d17d-4b68-9e04-7964fb21c1b1" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="9ccc03b4-ec10-4be4-9b14-4008e9d4d7c9" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-provider" doc:id="ed5c4c64-b602-4f70-bfe6-45211c986c12" >
-				<db:select doc:name="Select" doc:id="c0394dcf-0d07-4e48-9531-70184074d012" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.getProvider]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
+		<try doc:name="Try" doc:id="51fb9128-3344-448f-909a-356282010620" >
+			<db:select doc:name="Select" doc:id="c0394dcf-0d07-4e48-9531-70184074d012" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.getProvider]]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
 	provider_id: vars.provider_id
 }]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="953362d8-f800-48c6-9980-67eee70608e9" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="c3ac54fa-ff7e-42e0-ba5c-2725932fb97a" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="fd151516-e438-4f54-a555-3ffe1229d247" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="247bebd3-6ef9-470e-a80e-a42e319c7484" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="85b0ed62-0bea-4d7f-95a3-812bcc349f62" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-providers-array" doc:id="be58bccb-9c34-405e-93b8-88f1ee1e7294" >
-		<db:select doc:name="Select" doc:id="0c929565-323e-4f7d-8107-93521f7a3605" config-ref="Database_Config_WMS_BlueYonder">
-			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
+		<try doc:name="Try" doc:id="2a6b80fa-b7eb-415e-aaea-6809932a244c" >
+			<db:select doc:name="Select" doc:id="0c929565-323e-4f7d-8107-93521f7a3605" config-ref="Database_Config_WMS_BlueYonder">
+			<db:sql><![CDATA[#[vars.query]]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
 	providers_id: vars.providers_id
 	}]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="7c0fb2d2-5642-4beb-bcf6-0ead48cd6094" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="29e09e47-f409-44fc-a0ad-d5616caa3a15" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="7158dcf4-0b1e-4fbe-9871-bc36ffd503e6" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="1bf924ea-d373-44df-ad2a-cc7f42306125" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="df511ed6-e63f-48f5-820c-36dd7517da93" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-get-inventory" doc:id="fdeab77f-f316-41ed-b7ba-3ea588f4c385" >
-		<db:select doc:name="Select" doc:id="c9ac94f8-0954-4554-9e70-dc8c772f0656" config-ref="Database_Config_WMS_BlueYonder" fetchSize="1000" maxRows="100000">
+		<try doc:name="Try" doc:id="4780f2e1-1357-4295-a462-904978fea95c" >
+			<db:select doc:name="Select" doc:id="c9ac94f8-0954-4554-9e70-dc8c772f0656" config-ref="Database_Config_WMS_BlueYonder" fetchSize="1000" maxRows="100000">
 			<non-repeatable-iterable />
-			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[vars.inputParams]]]></db:input-parameters>
+			<db:sql><![CDATA[#[vars.query]]]></db:sql>
+			<db:input-parameters><![CDATA[#[vars.inputParams]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="0343d371-d4c5-46b5-bd03-069390d6728e" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="6f36a02b-af6b-452c-bd3f-2ac7689eaea1" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="2963a755-9881-4912-8d79-9111eb46cbe9" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="00c76de6-87f0-4769-8c74-9eb425774530" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="4dfb7226-3ea7-4a17-a8c6-f59b7040f6f5" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 	<sub-flow name="client-db-wms-select" doc:id="b4a49d1a-dcb0-43ad-a710-9197cecf2276" >
-		<db:select doc:name="Select" doc:id="1a1be8ca-d31b-4c1f-bd30-4c01493a55de" config-ref="Database_Config_WMS_BlueYonder" fetchSize="1000" maxRows="100000" >
-			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[vars.inputParams]]]></db:input-parameters>
+		<try doc:name="Try" doc:id="52c196d8-e70b-4e0a-9504-c44ce3c6880e" >
+			<db:select doc:name="Select" doc:id="1a1be8ca-d31b-4c1f-bd30-4c01493a55de" config-ref="Database_Config_WMS_BlueYonder" fetchSize="1000" maxRows="100000">
+			<db:sql><![CDATA[#[vars.query]]]></db:sql>
+			<db:input-parameters><![CDATA[#[vars.inputParams]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="68cd38e7-4b60-455a-9633-61cd43a9604b" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="4161a0f0-96e2-4828-b35e-1e36620b6240" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="78464f19-f401-4e61-92b3-0984489ced83" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="638ccb72-c112-47d8-802b-b4165fe95d0f" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="8ec4f9ff-b4f0-42c4-af18-33fb23750a1d" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 </mule>

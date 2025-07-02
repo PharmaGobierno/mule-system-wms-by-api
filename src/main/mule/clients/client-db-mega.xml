@@ -1,13 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<sub-flow name="client-db-mega-select" doc:id="8cf9afc6-58b3-49d5-9ae7-8f8d694bb829" >
-		<db:select doc:name="Select" doc:id="efda0571-bb4f-4dc0-becb-413ac6981664" config-ref="Database_Config_WMS_Mega">
-			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
-			<db:input-parameters ><![CDATA[#[vars.inputParams]]]></db:input-parameters>
+		<try doc:name="Try" doc:id="45b1459e-1017-4fe6-ba91-4bc369a06752" >
+			<db:select doc:name="Select" doc:id="efda0571-bb4f-4dc0-becb-413ac6981664" config-ref="Database_Config_WMS_Mega">
+			<db:sql><![CDATA[#[vars.query]]]></db:sql>
+			<db:input-parameters><![CDATA[#[vars.inputParams]]]></db:input-parameters>
 		</db:select>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="953252b4-a785-44fc-bf27-7eaac27f0b0f" type="DB:CONNECTIVITY, DB:RETRY_EXHAUSTED" >
+					<ee:transform doc:name="Transform Message" doc:id="30a9f739-29ce-46cf-844b-ffb2b8502915" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="causeby" ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-variable>
+							<ee:set-variable variableName="main_error" ><![CDATA[%dw 2.0
+output application/json
+---
+error.errorType]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="set payload error" doc:id="441ccf74-84cf-4fe1-b81c-1115257d4bdc" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  traxion_response: {
+    completed_succesfully: "false",
+    error: {
+      error_type: "WMS:" ++ (vars.main_error.identifier default "ERROR"),
+      payload: {
+      	event: correlationId
+      },
+      user_error_description: "error en comunicacion con la base de datos de WMS",
+      system_error_description: vars.causeby
+    }
+  }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="slackChannel" ><![CDATA[%dw 2.0
+output application/json
+---
+p('slack.connection.channel.connectivity.error')]]></ee:set-variable>
+							<ee:set-variable variableName="messageProvider" ><![CDATA[%dw 2.0
+output application/json
+---
+"ERROR PROVENIENTE DE WMS BLUEYONDER"]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="orchestrator-send-message-to-slack-main" doc:id="0bc770f1-d305-42ae-b825-ea7eb56ff6b9" name="orchestrator-send-message-to-slack-main" />
+					<raise-error doc:name="Raise error" doc:id="969e350e-6995-4e51-8f92-f9f9d7bb1b3c" type="WMS:ERROR" description="#[vars.causeby]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 	</sub-flow>
 </mule>
