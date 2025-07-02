@@ -47,7 +47,7 @@ output application/json
 ---
 {
 	"channel": vars.slackChannel,
-	"text": "`Critical!` <!channel> There was an error in system-shipments-> :luz_giratoria: "
+	"text": "`Critical!` <!channel> There was an error in system-wms-blueyonder-> :luz_giratoria: "
 	++ "\n ---------------------------------------------------"
 	++ "\n `"++ vars.messageProvider ++"`"
 	++ "\n ---------------------------------------------------"
