@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd">
+	<flow name="consumer-wms-by-receipt" doc:id="1e3610ab-e14f-45f6-87af-653d6f294dcc" >
+		<kafka:message-listener doc:name="Message listener" doc:id="fce5afeb-1ed0-4979-8149-526207c6ef3e" config-ref="Traxion_Kafka_Consumer_configuration" ackMode="MANUAL"/>
+		<ee:transform doc:name="Read payload" doc:id="8c692c33-5698-459a-bdb2-78e5c48238e6">
+   <ee:message>
+    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+read(payload, "application/json")]]></ee:set-payload>
+   </ee:message>
+   <ee:variables>
+   </ee:variables>
+  </ee:transform>
+		<!-- [STUDIO:"Read payload1"]<ee:transform doc:name="Read payload1" doc:id="744c0b13-9e33-44c0-a7c1-4e03889ff62d">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+&#45;&#45;-
+{
+	"metadata": {
+		"timestamp": "2025-08-29T13:18:46.359-06:00",
+		"source_system": "PISA",
+		"transaction_id": "RECEIPT-bdcc25e0-850c-11f0-8952-8eb87e18584e",
+		"transaction_type": "RECEIPT_CREATION",
+		"correlation_id": "bdcc25e0-850c-11f0-8952-8eb87e18584e"
+	},
+	"payload": {
+        "receipt_asn": [
+                {
+                "invoice_number": "INV-20250901-001",
+                "invoice_type": "Factura",
+                "tracking_number": "TRK123456789MX",
+                "expected_quantity": "500",
+                "product_number": "PRD-789456123",
+                "lot_number": "L2025A09",
+                "status": "En tránsito",
+                "manufacture_date": "2025-06-15",
+                "expiration_date": "2027-06-14",
+                "health_registry": "COFEPRIS-12345-2025",
+                "tender_number": "LIC-IMSS-2025-089",
+                "country_of_origin": "México",
+                "product_temperature": "2-8°C",
+                "brand": "PharmaLife",
+                "unit_case": "10",
+                "unit_pack": "50",
+                "load_number": "LD-98765"
+                },
+                {
+                "invoice_number": "INV-20250901-001",
+                "invoice_type": "Factura",
+                "tracking_number": "TRK123456789MX",
+                "expected_quantity": "500",
+                "product_number": "PRD-789456123",
+                "lot_number": "L2025A09",
+                "status": "En tránsito",
+                "manufacture_date": "2025-06-15",
+                "expiration_date": "2027-06-14",
+                "health_registry": "COFEPRIS-12345-2025",
+                "tender_number": "LIC-IMSS-2025-089",
+                "country_of_origin": "México",
+                "product_temperature": "2-8°C",
+                "brand": "PharmaLife",
+                "unit_case": "10",
+                "unit_pack": "50",
+                "load_number": "LD-98765"
+                },
+                {
+                "invoice_number": "INV-20250901-002",
+                "invoice_type": "Factura",
+                "tracking_number": "TRK123456789MX",
+                "expected_quantity": "500",
+                "product_number": "PRD-789456123",
+                "lot_number": "L2025A09",
+                "status": "En tránsito",
+                "manufacture_date": "2025-06-15",
+                "expiration_date": "2027-06-14",
+                "health_registry": "COFEPRIS-12345-2025",
+                "tender_number": "LIC-IMSS-2025-089",
+                "country_of_origin": "México",
+                "product_temperature": "2-8°C",
+                "brand": "PharmaLife",
+                "unit_case": "10",
+                "unit_pack": "50",
+                "load_number": "LD-98765"
+                }
+            &#93;
+    }
+
+}&#93;&#93;></ee:set-payload>
+			</ee:message>
+			<ee:variables />
+		</ee:transform> [STUDIO] -->
+		<logger level="INFO" doc:name="Logger2" doc:id="700a4427-d61a-42ee-826e-1f72abf04336" message="#[payload]" />
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;attributes.consumerCommitKey]" doc:name="Set commitKey" doc:id="dd43ba16-8c0c-4a26-ac65-9e024b6f1558" variableName="commitKey" />
+		<flow-ref doc:name="Call to consumer-wms-by-receipt-mapping" doc:id="dce394f5-97f8-4b7d-8b0f-ac3c159d038f" name="consumer-wms-by-receipt-mapping"/>
+		<flow-ref doc:name="Call to consumer-orchestrator-receipt-wms-by" doc:id="60987186-b5e1-4c29-9f78-18c540399c79" name="consumer-orchestrator-receipt-wms-by"/>
+		<flow-ref doc:name="Call to clients-post-wms-blueyonder-pisa-service-api" doc:id="c2c77af4-8aec-4d43-abf3-dda60d1bc1f5" name="clients-post-wms-blueyonder-pisa-service-api" />
+		<logger level="INFO" doc:name="Logger" doc:id="641bb89c-0c46-41d7-bc8f-c21c1446a0b7" message="#[payload]" />
+		<kafka:commit doc:name="Commit" doc:id="3275f747-9be4-4b5c-afdc-19a306f77071" config-ref="Traxion_Kafka_Consumer_configuration" commitKey="#[vars.commitKey]" />
+		<logger level="INFO" doc:name="Logger1" doc:id="5793444b-803d-4188-b1e1-56a9c27003f9" message="#[payload]" />
+	</flow>
+	<sub-flow name="consumer-wms-by-receipt-mapping" doc:id="42469382-750b-46f0-a9a0-73b54acbb4ee" >
+		<ee:transform doc:name="Transform Message" doc:id="fc6b7a7c-81bb-4806-8747-490abd0d8891" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json  encoding= "UTF-8"
+import * from dw::core::Strings
+var ramdomNumber = randomInt(89) + 10 //vars.consecNum
+fun noAlt(clasP, rem, num) = (substring(clasP, 3, 6) as String) ++ "-" ++ num as String ++ rem as Number default ""
+fun formDate(date) = (substring(date, 0, 4) as String) ++ (substring(date, 5, 7) as String) ++ 
+			(substring(date, 8, 10) as String) ++ (substring(date, 11, 13) as String) ++ 
+			(substring(date, 14, 16) as String) ++ (substring(date, 17, 19))
+---
+{
+	RA_INB_IFD: {
+		CTRL_SEG: payload.payload.receipt_asn groupBy $.invoice_number pluck $ map (invoice, index)->{
+			TRNNAM:"RCPT_TRAN",
+            TRNVER:"2017.1V0",
+			WHSE_ID: "ISEM", //PISA nueva instancia
+			RCPT_INVOICE_SEG: {
+				SEGNAM: "RECEIPT INVOICE",
+				TRNTYP: "A",
+                SUPNUM: "00123462",///De momento fijo
+				CLIENT_ID: "----",///Cambio en otra instancia
+				INVTYP: "ISEM", //Cambio en otra instancia
+				WAYBIL: "",
+				SADNUM: "",
+				ORGREF: "",
+				INVNUM: invoice.invoice_number,
+                PO_NUM:"INTERFAZ_TST_002",
+                TRKNUM:invoice.tracking_number,
+				RCPT_LINE_SEG: invoice map  (remision, index)-> {////por cada item que salga de agrupar
+					SEGNAM: "RECEIPT LINE",
+                    TRNTYP:"A",
+					INVLIN: leftPad((index + 1) as String, 4, "0"),
+					INVSLN: leftPad((index + 1) as String, 4, "0"),
+					EXPQTY: remision.expected_quantity,
+					PRTNUM: remision.product_number,
+					LOTNUM: remision.lot_number,
+					INV_ATTR_STR3: remision.health_registry,
+					INV_ATTR_STR9: remision.tender_number,
+					INV_ATTR_STR11: remision.country_of_origin,
+                    INV_ATTR_STR15: remision.product_temperature,
+					INV_ATTR_STR16: remision.brand,
+					RETCOD: remision.procedenciaClave,
+					MANDTE: formDate(remision.manufacture_date),
+					EXPIRE_DTE: formDate(remision.expiration_date),
+                    RCPT_ASN_SEG:{
+                        SEGNAM: "RECEIPT ASN",
+                        TRNTYP:"A",
+                        PRTNUM:remision.product_number,
+                        UNTCAS:remision.unit_case,
+                        UNTPAK:remision.unit_pack,
+                        UNTQTY:remision.expected_quantity,
+                        INVSTS:remision.status,
+                        FTPCOD:remision.product_number,
+                        LODNUM:remision.load_number,
+                        LOTNUM:remision.lot_number,
+                        MANDTE: formDate(remision.manufacture_date),
+                        PRT_CLIENT_ID:"----",///nueva instancia cambia el dato
+                        EXPIRE_DTE: formDate(remision.expiration_date),
+                        INV_ATTR_STR3: remision.health_registry,
+                        INV_ATTR_STR9: remision.tender_number,
+                        INV_ATTR_STR11: remision.country_of_origin,
+                        INV_ATTR_STR15: remision.product_temperature,
+                        INV_ATTR_STR16: remision.brand,
+                        INVLIN: leftPad((index + 1) as String, 4, "0"),
+					    INVSLN: leftPad((index + 1) as String, 4, "0"),
+                        DSTLOC: remision.tracking_number
+                    }
+				} 
+			}
+		}
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="consumer-orchestrator-receipt-wms-by" doc:id="c96ad591-be39-494a-affa-aa17114cba4b" >
+		<flow-ref doc:name="Call to clients-wms-blueyonder-pisa-request-login" doc:id="5230d95a-7189-4d63-9eb7-e7a01a238636" name="clients-wms-blueyonder-pisa-request-login" />
+		<flow-ref doc:name="Call to clients-post-wms-blueyonder-pisa-login-api" doc:id="3b894bfb-c112-48e0-b091-d31defc6db94" name="clients-post-wms-blueyonder-pisa-login-api" target="loginResponse" />
+	</sub-flow>
+	<sub-flow name="clients-wms-blueyonder-pisa-save-payload" doc:id="8c6e33b8-99b1-40d9-82b7-8827e5f6fbd6" >
+		<set-variable value="#[%dw 2.0&#10;output application/xml&#10;---&#10;payload]" doc:name="Save Payload" doc:id="0ee53035-4c7f-4c7b-99d1-8e6829b086f6" variableName="payloadBackup" />
+	</sub-flow>
+	<sub-flow name="clients-wms-blueyonder-pisa-request-login" doc:id="aaf613b4-6f85-491f-a7e1-102e4176e7c0" >
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    &quot;usr_id&quot;: p('client.wms.blueyonder.pisa.https.path.login.user'),&#10;    &quot;password&quot;: p('client.wms.blueyonder.pisa.https.path.login.password')&#10;}]" doc:name="Request Login" doc:id="85d5c995-646c-48aa-a8db-3adbe4e1ff50" variableName="requestLogin" />
+	</sub-flow>
+</mule>

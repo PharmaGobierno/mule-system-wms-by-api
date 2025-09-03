@@ -30,4 +30,11 @@ http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/
 	<db:config name="Database_Config_WMS_Mega" doc:name="Database Config" doc:id="93f8b7d2-1ee3-49c4-bca9-3b2eb406c9cc" >
 		<db:oracle-connection host="${database.wms.mega.server}" user="${database.wms.mega.username}" password="${database.wms.mega.password}" serviceName="${database.wms.mega.name}" port="${database.wms.mega.port}"/>
 	</db:config>
+	<http:request-config name="Request_AWS_BlueYonder_PISA" doc:name="HTTP Request configuration" doc:id="e02cd725-e01f-4586-8951-070b4b7359ea" responseTimeout="${client.wms.blueyonder.pisa.https.response.timeout}">
+		<http:request-connection host="${client.wms.blueyonder.pisa.https.host}" port="${client.wms.blueyonder.pisa.https.port}" connectionIdleTimeout="${client.wms.blueyonder.pisa.https.connection.idle.timeout}" maxConnections="${client.wms.blueyonder.pisa.https.max.connections}" protocol="HTTPS">
+			<tls:context >
+				<tls:trust-store path="traxion-global" type="jks" password="Tr@xion123" insecure="true"/>
+			</tls:context>
+		</http:request-connection>
+	</http:request-config>
 </mule>
