@@ -122,60 +122,33 @@ fun formDate(date) = (substring(date, 0, 4) as String) ++ (substring(date, 5, 7)
 {
 	RA_INB_IFD: {
 		CTRL_SEG: payload.payload.receipt_asn groupBy $.invoice_number pluck $ map (invoice, index)->{
-			TRNNAM:"RCPT_TRAN",
+			TRNNAM:"RA_TRAN",
             TRNVER:"2017.1V0",
-			WHSE_ID: "ISEM", //PISA nueva instancia
-			RCPT_INVOICE_SEG: {
+			WHSE_ID: "PISA", //PISA nueva instancia
+			HEADER_SEG: {
 				SEGNAM: "RECEIPT INVOICE",
 				TRNTYP: "A",
+                INVNUM: "",         // invoice_number
                 SUPNUM: "00123462",///De momento fijo
 				CLIENT_ID: "----",///Cambio en otra instancia
+                RIMST: "OPEN", 
 				INVTYP: "ISEM", //Cambio en otra instancia
-				WAYBIL: "",
-				SADNUM: "",
-				ORGREF: "",
-				INVNUM: invoice.invoice_number,
-                PO_NUM:"INTERFAZ_TST_002",
-                TRKNUM:invoice.tracking_number,
-				RCPT_LINE_SEG: invoice map  (remision, index)-> {////por cada item que salga de agrupar
-					SEGNAM: "RECEIPT LINE",
-                    TRNTYP:"A",
+                INVDTE: formDate(now()), 
+				LINE_SEG: invoice map  (remision, index)-> {////por cada item que salga de agrupar
+					SEGNAM: "LINE_SEG",
 					INVLIN: leftPad((index + 1) as String, 4, "0"),
 					INVSLN: leftPad((index + 1) as String, 4, "0"),
-					EXPQTY: remision.expected_quantity,
-					PRTNUM: remision.product_number,
+                    EXPQTY: remision.expected_quantity,
+                    PRTNUM: remision.product_number,
 					LOTNUM: remision.lot_number,
+                    RCVSTS: remision.status,
+                    MANDTE: formDate(remision.manufacture_date),
+					EXPIRE_DTE: formDate(remision.expiration_date),
 					INV_ATTR_STR3: remision.health_registry,
 					INV_ATTR_STR9: remision.tender_number,
 					INV_ATTR_STR11: remision.country_of_origin,
                     INV_ATTR_STR15: remision.product_temperature,
-					INV_ATTR_STR16: remision.brand,
-					RETCOD: remision.procedenciaClave,
-					MANDTE: formDate(remision.manufacture_date),
-					EXPIRE_DTE: formDate(remision.expiration_date),
-                    RCPT_ASN_SEG:{
-                        SEGNAM: "RECEIPT ASN",
-                        TRNTYP:"A",
-                        PRTNUM:remision.product_number,
-                        UNTCAS:remision.unit_case,
-                        UNTPAK:remision.unit_pack,
-                        UNTQTY:remision.expected_quantity,
-                        INVSTS:remision.status,
-                        FTPCOD:remision.product_number,
-                        LODNUM:remision.load_number,
-                        LOTNUM:remision.lot_number,
-                        MANDTE: formDate(remision.manufacture_date),
-                        PRT_CLIENT_ID:"----",///nueva instancia cambia el dato
-                        EXPIRE_DTE: formDate(remision.expiration_date),
-                        INV_ATTR_STR3: remision.health_registry,
-                        INV_ATTR_STR9: remision.tender_number,
-                        INV_ATTR_STR11: remision.country_of_origin,
-                        INV_ATTR_STR15: remision.product_temperature,
-                        INV_ATTR_STR16: remision.brand,
-                        INVLIN: leftPad((index + 1) as String, 4, "0"),
-					    INVSLN: leftPad((index + 1) as String, 4, "0"),
-                        DSTLOC: remision.tracking_number
-                    }
+					INV_ATTR_STR16: remision.brand
 				} 
 			}
 		}
